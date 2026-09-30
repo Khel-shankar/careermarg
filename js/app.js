@@ -230,6 +230,30 @@ const App = {
         return;
       }
 
+      // Launch Side-by-Side Comparison Tool trigger
+      const launchCmpBtn = e.target.closest("[data-launch-compare]");
+      if (launchCmpBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        const presetKey = launchCmpBtn.getAttribute("data-launch-compare") || this.state.landingComparePreset || "tech";
+        const presets = this.landingComparePresets();
+        const p = presets[presetKey] || presets.tech;
+        this.state.compareIds = [p.c1.id, p.c2.id];
+        this.save();
+        this.go("compare");
+        return;
+      }
+
+      // Finalize Career Goal trigger
+      const finCareerBtn = e.target.closest("[data-finalize-career]");
+      if (finCareerBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        const cid = finCareerBtn.getAttribute("data-finalize-career");
+        this.finalizeCareer(cid);
+        return;
+      }
+
       // Student Demo Login Button
       const demoLoginBtn = e.target.closest("[data-demo-login]");
       if (demoLoginBtn) {
@@ -3331,7 +3355,7 @@ const App = {
                   </div>
 
                   <div class="cmp-action-box">
-                    <button type="button" class="btn btn-sm btn-primary btn-block" data-go="compare" onclick="App.state.compareIds = ['${activePreset.c1.id}', '${activePreset.c2.id}'];">
+                    <button type="button" class="btn btn-sm btn-primary btn-block" data-finalize-career="${activePreset.c1.id}">
                       🎯 ${this.t("Finalize as My Goal", "इसे लक्ष्य चुनें")}
                     </button>
                   </div>
@@ -3386,7 +3410,7 @@ const App = {
                   </div>
 
                   <div class="cmp-action-box">
-                    <button type="button" class="btn btn-sm btn-primary btn-block" data-go="compare" onclick="App.state.compareIds = ['${activePreset.c1.id}', '${activePreset.c2.id}'];">
+                    <button type="button" class="btn btn-sm btn-primary btn-block" data-finalize-career="${activePreset.c2.id}">
                       🎯 ${this.t("Finalize as My Goal", "इसे लक्ष्य चुनें")}
                     </button>
                   </div>
@@ -3422,7 +3446,7 @@ const App = {
             </div>
 
             <div class="compare-cta-block">
-              <button class="btn btn-primary" type="button" data-go="compare" onclick="App.state.compareIds = ['data_scientist', 'cybersecurity_engineer'];">
+              <button class="btn btn-primary" type="button" data-launch-compare="${activePresetKey}">
                 ⚖️ ${this.t("Launch Side-by-Side Comparison Tool", "करियर तुलना टूल शुरू करें")} →
               </button>
               <button class="btn btn-secondary" type="button" data-go="explore">
@@ -5326,7 +5350,43 @@ const App = {
       String(c.id || "").toLowerCase().includes(clean) || 
       clean.includes(String(c.id || "").toLowerCase())
     );
-    return partial || null;
+    if (partial) return partial;
+
+    // Preset fallback so live comparison matrix works immediately
+    const presets = typeof this.landingComparePresets === "function" ? this.landingComparePresets() : null;
+    if (presets) {
+      for (const p of Object.values(presets)) {
+        for (const c of [p.c1, p.c2]) {
+          if (c && (String(c.id).toLowerCase() === clean || String(c.title).toLowerCase() === clean)) {
+            return {
+              id: c.id,
+              title: c.title,
+              hi: c.title,
+              sector: c.sector,
+              sectorHi: c.sector,
+              icon: c.icon || "💼",
+              salary: c.salary,
+              salaryFull: c.salary,
+              education: c.stream || c.duration,
+              educationHi: c.stream || c.duration,
+              educationPath: (c.stream ? `${c.stream} → ` : "") + (c.duration || "B.Tech / Degree"),
+              entranceExams: c.exams || [],
+              riasec: c.riasec,
+              careerGrowth: c.growth,
+              workLocation: c.environment,
+              courseFees: "₹25,000 - ₹2,50,000 / year (Govt vs Private)",
+              scholarships: "National Scholarship Portal (NSP), Merit-cum-Means, State Schemes",
+              topColleges: "IITs, NITs, Central Universities, Premier State Colleges",
+              overview: c.title,
+              overviewHi: c.title,
+              fit: c.fit || 90
+            };
+          }
+        }
+      }
+    }
+
+    return null;
   },
 
   cleanDataText(text) {
@@ -5996,7 +6056,17 @@ const App = {
   },
 
   viewCompare() {
-    const uniqueIds = Array.from(new Set(this.state.compareIds || []));
+    let uniqueIds = Array.from(new Set(this.state.compareIds || []));
+    if (!uniqueIds.length) {
+      const presets = typeof this.landingComparePresets === "function" ? this.landingComparePresets() : null;
+      const presetKey = this.state.landingComparePreset || "tech";
+      const p = presets ? (presets[presetKey] || presets.tech) : null;
+      if (p && p.c1 && p.c2) {
+        uniqueIds = [p.c1.id, p.c2.id];
+        this.state.compareIds = [...uniqueIds];
+        this.save();
+      }
+    }
     const selected = uniqueIds
       .map((id) => {
         const c = this.getCareerById(id);
@@ -7428,6 +7498,30 @@ const App = {
         this.render();
         const sec = document.getElementById("compare-feature");
         if (sec) sec.scrollIntoView({ behavior: "smooth" });
+      };
+    });
+
+    // Launch Side-by-Side Comparison Tool direct binding
+    document.querySelectorAll("[data-launch-compare]").forEach((btn) => {
+      btn.onclick = (e) => {
+        if (e) { e.preventDefault(); e.stopPropagation(); }
+        const presetKey = btn.getAttribute("data-launch-compare") || this.state.landingComparePreset || "tech";
+        const presets = typeof this.landingComparePresets === "function" ? this.landingComparePresets() : null;
+        const p = presets ? (presets[presetKey] || presets.tech) : null;
+        if (p && p.c1 && p.c2) {
+          this.state.compareIds = [p.c1.id, p.c2.id];
+          this.save();
+        }
+        this.go("compare");
+      };
+    });
+
+    // Finalize Career Goal direct binding
+    document.querySelectorAll("[data-finalize-career]").forEach((btn) => {
+      btn.onclick = (e) => {
+        if (e) { e.preventDefault(); e.stopPropagation(); }
+        const cid = btn.getAttribute("data-finalize-career");
+        this.finalizeCareer(cid);
       };
     });
 
