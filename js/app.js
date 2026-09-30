@@ -435,9 +435,20 @@ const App = {
     }, true);
 
     window.addEventListener("hashchange", () => this.onHash());
+    
+    // Smart resize listener: only reflow on substantial horizontal orientation changes and NEVER when user is typing in an input
+    this._lastWindowWidth = window.innerWidth;
     window.addEventListener("resize", () => {
-      clearTimeout(this._resizeTimer);
-      this._resizeTimer = setTimeout(() => this.render(), 120);
+      const activeEl = document.activeElement;
+      const isInputActive = activeEl && (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA" || activeEl.tagName === "SELECT");
+      if (isInputActive) return; // Never destroy DOM or trigger re-render while virtual keyboard is open or user is typing!
+      
+      const newWidth = window.innerWidth;
+      if (Math.abs(newWidth - (this._lastWindowWidth || newWidth)) > 40) {
+        this._lastWindowWidth = newWidth;
+        clearTimeout(this._resizeTimer);
+        this._resizeTimer = setTimeout(() => this.render(), 150);
+      }
     });
     window.addEventListener("keydown", (e) => {
       if (e.key === "Escape") {
@@ -2504,7 +2515,7 @@ const App = {
             🏠 <span class="topbar-txt">${this.t("Home", "होम")}</span>
           </button>
           <button class="pill-btn topbar-saved-btn" type="button" data-open-saved="1" title="${this.t("View Saved Careers & Roadmap", "सेव किए गए करियर व रोडमैप देखें")}">
-            ⭐ <span class="topbar-txt">${this.t("Saved", "सेव")} </span>(${this.getValidSavedCareers().length})
+            ⭐ <span class="topbar-txt">${this.t("Saved", "सेव")} </span><span class="saved-count-pill">${this.getValidSavedCareers().length}</span>
           </button>
           ${
             pause
@@ -2674,17 +2685,17 @@ const App = {
           ${
             auth
               ? `
-            <div class="user-nav-badge" title="${this.escape(auth.name)} (${this.t("Class", "कक्षा")} ${auth.grade || this.state.profile.grade || "10"})">
+            <div class="user-nav-badge" title="${this.escape(auth.name)} (${auth.role === "counselor" ? this.t("Career Counselor", "करियर परामर्शदाता") : this.t("Class", "कक्षा") + " " + (auth.grade || this.state.profile.grade || "10")})">
               <div class="avatar">${this.initials()}</div>
               <div class="user-nav-info">
                 <span class="uname">${this.escape(auth.name)}</span>
-                <span class="ugrade">${this.t("Class", "कक्षा")} ${auth.grade || this.state.profile.grade || "10"}</span>
+                <span class="ugrade">${auth.role === "counselor" ? this.t("Counselor", "परामर्शदाता") : `${this.t("Class", "कक्षा")} ${auth.grade || this.state.profile.grade || "10"}`}</span>
               </div>
               <button type="button" class="btn-signout-nav" data-auth-logout="1" title="${this.t("Sign Out", "लॉगआउट")}">🚪 <span class="nav-btn-txt">${this.t("Logout", "लॉगआउट")}</span></button>
             </div>
-            <button type="button" class="btn-auth-nav primary nav-btn-dash" data-go="home" title="${this.t("Dashboard", "डैशबोर्ड")}">
-              <span class="dash-btn-full">${this.t("Dashboard", "डैशबोर्ड")} →</span>
-              <span class="dash-btn-short">${this.t("App", "ऐप")} →</span>
+            <button type="button" class="btn-auth-nav primary nav-btn-dash" data-go="${auth.role === "counselor" ? "counselor" : "home"}" title="${auth.role === "counselor" ? this.t("Counselor Portal", "काउंसलर पोर्टल") : this.t("Dashboard", "डैशबोर्ड")}">
+              <span class="dash-btn-full">${auth.role === "counselor" ? this.t("Counselor Portal", "काउंसलर पोर्टल") : this.t("Dashboard", "डैशबोर्ड")} →</span>
+              <span class="dash-btn-short">${this.t("Portal", "पोर्टल")} →</span>
             </button>
           `
               : `
@@ -5318,23 +5329,144 @@ const App = {
     return partial || null;
   },
 
+  cleanDataText(text) {
+    if (!text || typeof text !== "string") return "";
+    let s = text;
+    // Un-escape literal \n or escaped newlines
+    s = s.replace(/\\n/g, "\n");
+    // Normalize .n1. or .n2. into .\n1. or .\n2.
+    s = s.replace(/\.n(?=\d+\.)/g, ".\n");
+    s = s.replace(/\bn(?=\d+\.\s*)/g, "\n");
+    // Normalize n • into \n•
+    s = s.replace(/(\S)\s*n\s*•\s*/g, "$1\n• ");
+    s = s.replace(/^n\s*•\s*/, "• ");
+    // Normalize institute headers
+    s = s.replace(/\s*n?\s*(GOVERNMENT INSTITUTES|PRIVATE INSTITUTES|DISTANCE LEARNING INSTITUTE)\b/gi, "\n\n$1\n");
+    // Un-mangle hyphenated words that got corrupted with bullets (e.g. problem• solving -> problem-solving)
+    s = s.replace(/\b([a-zA-Z0-9]+)\s*•\s*([a-zA-Z0-9]+)\b/g, "$1-$2");
+    // Fix mangled state and common words where an 'n' was appended before space
+    s = s.replace(/\bThisn\b/g, "This");
+    s = s.replace(/\blown\b/g, "low");
+    s = s.replace(/\bofn\b/g, "of");
+    s = s.replace(/\bBanksn\b/g, "Banks");
+    s = s.replace(/\bRajasthann\b/g, "Rajasthan");
+    s = s.replace(/\bHaryanan\b/g, "Haryana");
+    s = s.replace(/\bPradeshn\b/g, "Pradesh");
+    s = s.replace(/\bAssamn\b/g, "Assam");
+    s = s.replace(/\bOdishan\b/g, "Odisha");
+    s = s.replace(/\bKarnatakan\b/g, "Karnataka");
+    s = s.replace(/\bBengaln\b/g, "Bengal");
+    s = s.replace(/\bNadun\b/g, "Nadu");
+    s = s.replace(/\betc\.n\b/g, "etc.");
+    // Fix stray trailing n before capital letter
+    s = s.replace(/([a-z\.,])n\s+([A-Z])/g, "$1\n$2");
+    return s.trim();
+  },
+
   formatParagraphList(text) {
     if (!text) return "";
-    return this.escape(text)
-      .split(/\r?\n/)
-      .map((line) => line.trim())
-      .filter((line) => line.length > 0)
-      .map((line) => `<p class="dossier-p">${line}</p>`)
-      .join("");
+    const clean = this.cleanDataText(text);
+
+    // Case 1: Growth Ladder (e.g. Junior -> Mid -> Senior -> Lead)
+    if (clean.includes(" > ") || clean.includes(" → ") || clean.includes("   ")) {
+      const parts = clean
+        .split(/\s*(?:>|→|\s{3,})\s*/)
+        .map((p) => p.trim())
+        .filter((p) => p.length > 0);
+      if (parts.length >= 2) {
+        return `
+          <div class="growth-ladder-flow">
+            ${parts
+              .map(
+                (p, idx) => `
+              <div class="ladder-node ${idx === parts.length - 1 ? "ladder-peak" : ""}">
+                <span class="ladder-rank">L${idx + 1}</span>
+                <span class="ladder-role">${this.escape(p)}</span>
+                ${idx < parts.length - 1 ? `<span class="ladder-arrow">➔</span>` : ""}
+              </div>
+            `
+              )
+              .join("")}
+          </div>
+        `;
+      }
+    }
+
+    // Case 2: Numbered steps (e.g. 1. ... \n 2. ...)
+    const numberedRegex = /(?:^|\n)\s*(\d+)\.\s+/;
+    if (numberedRegex.test(clean)) {
+      const lines = clean.split(/(?=(?:^|\n)\s*\d+\.\s+)/).map((l) => l.trim()).filter(Boolean);
+      return `
+        <div class="pathway-steps-list">
+          ${lines
+            .map((line) => {
+              const m = line.match(/^(\d+)\.\s*([\s\S]+)$/);
+              if (m) {
+                return `
+                <div class="pathway-step-card">
+                  <div class="pathway-step-num">${m[1]}</div>
+                  <div class="pathway-step-desc">${this.escape(m[2])}</div>
+                </div>
+              `;
+              }
+              return `<p class="dossier-p">${this.escape(line)}</p>`;
+            })
+            .join("")}
+        </div>
+      `;
+    }
+
+    // Case 3: Categorized Institutes (GOVERNMENT / PRIVATE / DISTANCE)
+    if (/GOVERNMENT INSTITUTES|PRIVATE INSTITUTES|DISTANCE LEARNING INSTITUTE/i.test(clean)) {
+      const sections = clean.split(/\n\n+/);
+      return sections
+        .map((sec) => {
+          const lines = sec.split(/\n+/).map((l) => l.trim()).filter(Boolean);
+          if (!lines.length) return "";
+          const header = lines[0].match(/^(GOVERNMENT INSTITUTES|PRIVATE INSTITUTES|DISTANCE LEARNING INSTITUTE)/i);
+          if (header) {
+            const title = header[0];
+            const items = lines.slice(1);
+            return `
+            <div class="institute-category-block">
+              <div class="inst-cat-badge">🏛️ ${this.escape(title)}</div>
+              <ul class="dossier-list inst-list">
+                ${items.map((it) => `<li>${this.escape(it.replace(/^[•\-\*]\s*/, ""))}</li>`).join("")}
+              </ul>
+            </div>
+          `;
+          }
+          return `<p class="dossier-p">${this.escape(sec)}</p>`;
+        })
+        .join("");
+    }
+
+    // Case 4: Bulleted items (e.g. Scholarships, Loans)
+    if (clean.includes("•") || clean.includes("\n")) {
+      const items = clean
+        .split(/[\r\n]+|•/)
+        .map((s) => s.trim())
+        .filter((s) => s.length > 2);
+      if (items.length > 1) {
+        return `
+          <ul class="dossier-list">
+            ${items.map((item) => `<li>${this.escape(item)}</li>`).join("")}
+          </ul>
+        `;
+      }
+    }
+
+    return `<p class="dossier-p">${this.escape(clean)}</p>`;
   },
 
   formatBulletList(text) {
     if (!text) return "";
-    const items = text
+    const clean = this.cleanDataText(text);
+    const items = clean
       .split(/[\r\n]+|•/)
       .map((s) => s.trim())
       .filter((s) => s.length > 2);
-    if (!items.length) return `<p class="muted">${this.escape(text)}</p>`;
+    if (!items.length) return `<p class="muted">${this.escape(clean)}</p>`;
     return `<ul class="dossier-list">${items.map((item) => `<li>${this.escape(item)}</li>`).join("")}</ul>`;
   },
 
@@ -5381,9 +5513,19 @@ const App = {
     return capitalized.length === 1 ? capitalized[0] : null;
   },
 
+  cleanWikiQuery(name, careerTitle) {
+    if (!name) return `${careerTitle || "Career"} India`;
+    // Clean honorifics from start
+    let q = name.replace(/^(?:Shri|Smt\.?|Dr\.?|Prof\.?|Mr\.?|Mrs\.?|Ms\.?)\s+/i, "");
+    // Clean designations/post-nominals from end (IRSE, IAS, IPS, IFS, IIT, etc.)
+    q = q.replace(/\s+(?:IRSE|IAS|IPS|IFS|IRS|IES|IRSME|IRTS|IIT|IIM)\b.*$/i, "");
+    q = q.trim();
+    return q || name;
+  },
+
   cleanStoryText(raw) {
     if (!raw) return "";
-    return raw
+    return this.cleanDataText(raw)
       .replace(/\\n|\r\n|\n/g, " ")
       .replace(/\s+n\s+/g, " ")
       .replace(/\bthe\s+n\s+/g, "the ")
@@ -5392,7 +5534,6 @@ const App = {
       .replace(/\bhis\s+n\s+/g, "his ")
       .replace(/\bwas\s+n\s+/g, "was ")
       .replace(/\bin\s+n\s+/g, "in ")
-      .replace(/\s*•\s*/g, "-")
       .replace(/\s{2,}/g, " ")
       .trim();
   },
@@ -5403,8 +5544,8 @@ const App = {
     const cleanStory = this.cleanStoryText(rawStory);
     const name = career.achieverName || this.extractAchieverName(rawStory) || "";
     
-    const wikiQuery = name ? name : `${career.title} India`;
-    const wikiUrl = `https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(wikiQuery)}`;
+    const cleanQuery = this.cleanWikiQuery(name, career.title);
+    const wikiUrl = `https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(cleanQuery)}`;
     
     let formattedBody = this.escape(cleanStory);
     if (name) {
@@ -7524,6 +7665,21 @@ const App = {
 
   bindOnboarding() {
     const isHi = this.state.lang === "hi";
+
+    // Continuous Live input sync on all fields to guarantee zero focus interruption & zero data loss
+    const fieldIds = ["f-name", "f-city", "f-school", "f-role-model-name", "f-aspiration"];
+    fieldIds.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.oninput = () => this.syncOnboardingFields();
+        el.onchange = () => this.syncOnboardingFields();
+      }
+    });
+
+    const streamSelect = document.getElementById("f-stream");
+    if (streamSelect) {
+      streamSelect.onchange = () => this.syncOnboardingFields();
+    }
 
     // Dynamic institution label update on Education Level change
     const eduSelect = document.getElementById("f-education-level");

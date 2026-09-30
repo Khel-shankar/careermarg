@@ -98,9 +98,11 @@ window.MoineeScore = {
 
   // Pure Vector SVG Radar Chart Generator
   generateRadarSvg(labels, values, options = {}) {
-    const size = options.size || 380;
-    const center = size / 2;
-    const radius = options.radius || 100;
+    const width = options.width || 380;
+    const height = options.height || 320;
+    const centerX = width / 2;
+    const centerY = height / 2;
+    const radius = options.radius || 80;
     const numVars = labels.length;
     const angleStep = (Math.PI * 2) / numVars;
     const strokeColor = options.strokeColor || "var(--vermilion, #c9432a)";
@@ -115,8 +117,8 @@ window.MoineeScore = {
       for (let i = 0; i < numVars; i++) {
         const angle = i * angleStep - Math.PI / 2;
         const r = radius * level;
-        const x = center + r * Math.cos(angle);
-        const y = center + r * Math.sin(angle);
+        const x = centerX + r * Math.cos(angle);
+        const y = centerY + r * Math.sin(angle);
         pts.push(`${x.toFixed(1)},${y.toFixed(1)}`);
       }
       gridPolygons += `<polygon points="${pts.join(" ")}" fill="none" stroke="${gridColor}" stroke-width="1" stroke-dasharray="${level < 1 ? "2,3" : "none"}"/>`;
@@ -126,9 +128,9 @@ window.MoineeScore = {
     let spokeLines = "";
     for (let i = 0; i < numVars; i++) {
       const angle = i * angleStep - Math.PI / 2;
-      const x = center + radius * Math.cos(angle);
-      const y = center + radius * Math.sin(angle);
-      spokeLines += `<line x1="${center}" y1="${center}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="${gridColor}" stroke-width="1"/>`;
+      const x = centerX + radius * Math.cos(angle);
+      const y = centerY + radius * Math.sin(angle);
+      spokeLines += `<line x1="${centerX}" y1="${centerY}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="${gridColor}" stroke-width="1"/>`;
     }
 
     // Data polygon and points
@@ -141,8 +143,8 @@ window.MoineeScore = {
       const val = Math.max(10, Math.min(100, values[i] || 0));
       const valPercent = val / 100;
       const r = radius * valPercent;
-      const x = center + r * Math.cos(angle);
-      const y = center + r * Math.sin(angle);
+      const x = centerX + r * Math.cos(angle);
+      const y = centerY + r * Math.sin(angle);
       dataPts.push(`${x.toFixed(1)},${y.toFixed(1)}`);
 
       vertexCircles += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4" fill="${strokeColor}" stroke="var(--card, #fff)" stroke-width="1.5"/>`;
@@ -150,27 +152,27 @@ window.MoineeScore = {
       // Smart label positioning & text-anchor to avoid clipping on canvas edges
       const cosVal = Math.cos(angle);
       const sinVal = Math.sin(angle);
-      const labelDist = radius + 26;
-      const lx = center + labelDist * cosVal;
-      const ly = center + labelDist * sinVal;
+      const labelDist = radius + 22;
+      const lx = centerX + labelDist * cosVal;
+      const ly = centerY + labelDist * sinVal;
 
       let anchor = "middle";
-      if (cosVal > 0.35) anchor = "start";
-      else if (cosVal < -0.35) anchor = "end";
+      if (cosVal > 0.3) anchor = "start";
+      else if (cosVal < -0.3) anchor = "end";
 
       const labelText = labels[i];
       const valText = `${Math.round(values[i] || 0)}%`;
 
       labelElements += `
-        <text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="${anchor}" dominant-baseline="central" fill="${textColor}" font-size="10.5" font-weight="700" font-family="var(--font, sans-serif)">
+        <text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="${anchor}" dominant-baseline="central" fill="${textColor}" font-size="10" font-weight="700" font-family="var(--font, sans-serif)">
           ${labelText} <tspan font-weight="800" fill="${strokeColor}">(${valText})</tspan>
         </text>
       `;
     }
 
     return `
-      <svg class="radar-svg" width="100%" height="auto" viewBox="0 0 ${size} ${size}" style="max-width:340px;display:block;margin:0 auto;overflow:visible;" role="img" aria-label="Vector Radar Chart">
-        <circle cx="${center}" cy="${center}" r="${radius}" fill="rgba(255,255,255,0.03)"/>
+      <svg class="radar-svg" width="100%" height="auto" viewBox="0 0 ${width} ${height}" style="max-width:380px;width:100%;display:block;margin:0 auto;overflow:visible;" role="img" aria-label="Vector Radar Chart">
+        <circle cx="${centerX}" cy="${centerY}" r="${radius}" fill="rgba(255,255,255,0.03)"/>
         ${gridPolygons}
         ${spokeLines}
         <polygon points="${dataPts.join(" ")}" fill="${fillColor}" stroke="${strokeColor}" stroke-width="2.5" stroke-linejoin="round"/>
@@ -359,18 +361,31 @@ window.MoineeScore = {
 
         // Explainable Reasons
         const reasons = [];
+        let cleanReasonText = "High vocational affinity with your personality profile.";
+        if (career.traits) {
+          const rawItems = career.traits
+            .replace(/\b([a-zA-Z0-9]+)\s*•\s*([a-zA-Z0-9]+)\b/g, "$1-$2")
+            .split(/[\r\n]+|•|\.n|n\s*•/)
+            .map((s) => s.trim().replace(/^n\s*/, ""))
+            .filter((s) => s.length > 8);
+          if (rawItems.length > 0) {
+            cleanReasonText = rawItems[0].replace(/n$/, "").trim();
+            if (!cleanReasonText.endsWith(".")) cleanReasonText += ".";
+          }
+        }
+
         if (typeof career.riasec === "string" && career.riasec.length > 0) {
           reasons.push({
             type: "interest",
             title: `Holland Code Fit: ${career.riasec.split("").join(" + ")}`,
-            text: career.traits ? career.traits.slice(0, 90) + "..." : "High vocational affinity with your personality profile.",
+            text: cleanReasonText,
           });
         } else if (career.riasec && typeof career.riasec === "object") {
           const rKeys = Object.keys(career.riasec).slice(0, 3);
           reasons.push({
             type: "interest",
             title: `Holland Code Fit: ${rKeys.join(" + ")}`,
-            text: "High vocational affinity with your personality profile.",
+            text: cleanReasonText,
           });
         }
         if (streamInfo.primary && streamInfo.primary.includes(cSec)) {
