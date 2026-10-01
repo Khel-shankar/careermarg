@@ -600,7 +600,7 @@ const App = {
   async loadFromDatabase() {
     try {
       const userId = this.state.auth?.id || (this.state.auth?.email ? ("usr_" + this.state.auth.email.toLowerCase().replace(/[^a-z0-9]/g, "_")) : (this.state.userId || "usr-demo-1"));
-      const res = await fetch(`api/sync.php?userId=${encodeURIComponent(userId)}`);
+      const res = await fetch(`api/sync?userId=${encodeURIComponent(userId)}`);
       if (!res.ok) return;
       const data = await res.json();
       if (data && data.success) {
@@ -1141,7 +1141,7 @@ const App = {
     }
 
     try {
-      const res = await fetch("api/auth.php?action=reset_password", {
+      const res = await fetch("api/auth?action=reset_password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -1222,7 +1222,7 @@ const App = {
     }
 
     try {
-      const res = await fetch("api/auth.php?action=google_auth", {
+      const res = await fetch("api/auth?action=google_auth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -1294,7 +1294,7 @@ const App = {
 
   async handleDemoGroup1() {
     try {
-      const res = await fetch("api/auth.php?action=demo_group1", { method: "POST" });
+      const res = await fetch("api/auth?action=demo_group1", { method: "POST" });
       const data = await res.json();
       if (data && data.success) {
         this.state.auth = data.auth;
@@ -6412,42 +6412,62 @@ const App = {
   },
 
   getDefaultCounselorStudents() {
-    return [
-      { id: "std_101", name: "Aarav Sharma", grade: "10", school: "Kendriya Vidyalaya No. 1, Delhi", holland_code: "IER", top_career: "Software Architect / AI Specialist", recommended_stream: "Science (PCM)", parent_contacted: 1, next_session_date: "Tomorrow, 10:30 AM" },
-      { id: "std_102", name: "Diya Patel", grade: "10", school: "Delhi Public School, R.K. Puram", holland_code: "ISA", top_career: "Biotechnologist & Geneticist", recommended_stream: "Science (PCB)", parent_contacted: 1, next_session_date: "02 Oct, 11:00 AM" },
-      { id: "std_103", name: "Rohan Verma", grade: "10", school: "Kendriya Vidyalaya, IIT Powai", holland_code: "ECS", top_career: "Chartered Accountant & Financial Analyst", recommended_stream: "Commerce (with Maths)", parent_contacted: 0, next_session_date: "03 Oct, 02:30 PM" },
-      { id: "std_104", name: "Ananya Iyer", grade: "10", school: "National Public School, Indiranagar", holland_code: "ASE", top_career: "Product & UX Design Lead", recommended_stream: "Humanities & Design", parent_contacted: 1, next_session_date: "04 Oct, 09:30 AM" },
-      { id: "std_105", name: "Kabir Sengupta", grade: "10", school: "St. Xavier's Collegiate School", holland_code: "IRE", top_career: "Robotics & Automation Engineer", recommended_stream: "Science (PCM)", parent_contacted: 0, next_session_date: "05 Oct, 03:00 PM" },
-      { id: "std_106", name: "Meera Nair", grade: "10", school: "Chinmaya Vidyalaya, Kochi", holland_code: "SIE", top_career: "Clinical Psychologist & Counselor", recommended_stream: "Science (PCB) / Arts", parent_contacted: 1, next_session_date: "06 Oct, 11:30 AM" },
-      { id: "std_107", name: "Aditya Deshmukh", grade: "9", school: "Bal Bharati Public School, Pune", holland_code: "RIC", top_career: "Aerospace & Avionics Engineer", recommended_stream: "Science (PCM)", parent_contacted: 1, next_session_date: "08 Oct, 10:00 AM" },
-      { id: "std_108", name: "Sanya Malhotra", grade: "11", school: "Modern School, Barakhamba Road", holland_code: "EAS", top_career: "Corporate Lawyer & Legal Consultant", recommended_stream: "Humanities / Commerce", parent_contacted: 0, next_session_date: "09 Oct, 04:00 PM" },
-      { id: "std_109", name: "Tanmay Joshi", grade: "12", school: "DAV Public School, Chandigarh", holland_code: "IRC", top_career: "Data Scientist & AI Researcher", recommended_stream: "Science (PCM)", parent_contacted: 1, next_session_date: "10 Oct, 01:00 PM" },
-      { id: "std_110", name: "Pooja Hegde", grade: "10", school: "Kendriya Vidyalaya, Malleswaram", holland_code: "SEC", top_career: "Investment Banker & Fintech Manager", recommended_stream: "Commerce (with Maths)", parent_contacted: 0, next_session_date: "11 Oct, 11:00 AM" },
-      { id: "std_111", name: "Vikram Rathore", grade: "10", school: "Army Public School, Jaipur", holland_code: "RIE", top_career: "Defense Aviation / NDA Officer", recommended_stream: "Science (PCM)", parent_contacted: 1, next_session_date: "12 Oct, 10:30 AM" },
-      { id: "std_112", name: "Ishaan Mukherjee", grade: "9", school: "South Point High School, Kolkata", holland_code: "AIR", top_career: "Game Designer & 3D Animator", recommended_stream: "PCM / Design", parent_contacted: 1, next_session_date: "14 Oct, 02:00 PM" }
+    // Authentic Seed Demo Persona list for initial showcase
+    const seeds = [
+      { id: "usr_demo_ananya_g1", name: "Ananya Sharma", email: "ananya.sharma@careermarg.org", grade: "7", school: "Kendriya Vidyalaya No. 1", cohortGroup: "group_1", cohortLabel: "Group I (Classes 6–8)", completedLevels: ["Level 1: Interest"], completedCount: 1, hollandCode: "IAS", holland_code: "IAS", topCareerMatches: ["ui_ux_designer", "data_scientist", "robotics_engineer"], top_career: "Product & UI/UX Designer", recommended_stream: "Higher Studies Exploration", lastActive: "Just now" },
+      { id: "usr_demo_rohan_g2", name: "Rohan Verma", email: "rohan.verma@careermarg.org", grade: "10", school: "Delhi Public School", cohortGroup: "group_2", cohortLabel: "Group II (Classes 9–10)", completedLevels: ["Level 1: Interest", "Level 2: Aptitude"], completedCount: 2, hollandCode: "RIE", holland_code: "RIE", topCareerMatches: ["robotics_engineer", "aerospace_engineer", "data_scientist"], top_career: "Robotics & AI Engineer", recommended_stream: "Science (PCM)", lastActive: "1 hour ago" },
+      { id: "usr_demo_priya_g3", name: "Priya Patel", email: "priya.patel@careermarg.org", grade: "12", school: "St. Xavier's Senior Secondary School", cohortGroup: "group_3", cohortLabel: "Group III (Classes 11–12)", completedLevels: ["Level 1: Interest", "Level 2: Aptitude", "Level 3: Personality"], completedCount: 3, hollandCode: "IER", holland_code: "IER", topCareerMatches: ["software_engineer", "data_scientist", "ai_researcher"], top_career: "Software Architect & AI Researcher", recommended_stream: "Science (PCM / Tech)", lastActive: "Active today" }
     ];
+
+    // If active user is registered and not in seeds, prepend active user
+    const curAuth = this.state.auth;
+    if (curAuth && curAuth.role !== "admin" && curAuth.email && !seeds.some(s => s.email === curAuth.email)) {
+      const g = parseInt(curAuth.grade || this.state.profile?.grade || "10", 10);
+      const cohortGroup = g <= 8 ? "group_1" : g >= 11 ? "group_3" : "group_2";
+      const cohortLabel = g <= 8 ? "Group I (Classes 6–8)" : g >= 11 ? "Group III (Classes 11–12)" : "Group II (Classes 9–10)";
+      seeds.unshift({
+        id: curAuth.id || ("usr_" + curAuth.email.replace(/[^a-z0-9]/g, "_")),
+        name: curAuth.name || this.state.profile?.name || "Registered Student",
+        email: curAuth.email,
+        grade: String(g),
+        school: curAuth.school || this.state.profile?.school || "Direct Online Registration",
+        cohortGroup,
+        cohortLabel,
+        completedLevels: (this.state.completedTiers || []).map(t => t.includes("1") ? "Level 1: Interest" : t.includes("2") ? "Level 2: Aptitude" : "Level 3: Personality"),
+        completedCount: (this.state.completedTiers || []).length,
+        hollandCode: (this.state.traitScores?.riasec ? Object.keys(this.state.traitScores.riasec).slice(0, 3).join("") : "IES"),
+        holland_code: (this.state.traitScores?.riasec ? Object.keys(this.state.traitScores.riasec).slice(0, 3).join("") : "IES"),
+        topCareerMatches: this.state.savedCareers || ["software_engineer"],
+        top_career: (this.state.savedCareers && this.state.savedCareers[0]) ? this.getCareerById(this.state.savedCareers[0])?.title || "Software Engineer" : "Software Engineer",
+        recommended_stream: g <= 10 ? "Science (PCM)" : "Higher Studies / Tech",
+        lastActive: "Active now"
+      });
+    }
+
+    return seeds;
   },
 
   async loadCounselorDashboard() {
     try {
-      const statsRes = await fetch("api/counselor.php?action=dashboard_stats");
+      const statsRes = await fetch("api/counselor?action=stats");
       const statsData = await statsRes.json();
       if (statsData && statsData.success) {
         this.state.counselorStats = statsData.data || statsData.stats;
       }
     } catch (_) {
-      if (!this.state.counselorStats) {
-        this.state.counselorStats = {
-          totalStudents: 156,
-          group1Count: 48,
-          group2Count: 58,
-          group3Count: 50,
-          completedAssessments: 246,
-          schoolsCount: 4,
-          schools: ["Kendriya Vidyalaya No. 1", "Delhi Public School", "St. Xavier's Senior Secondary School", "Army Public School"],
-          riasecAverages: { R: 72, I: 85, A: 60, S: 75, E: 80, C: 68 }
-        };
-      }
+      // Dynamic fallback based on active roster
+      const students = this.state.counselorStudents || this.getDefaultCounselorStudents();
+      const distinctSchools = Array.from(new Set(students.map(s => s.school).filter(Boolean)));
+      this.state.counselorStats = {
+        totalStudents: students.length,
+        group1Count: students.filter(s => s.cohortGroup === "group_1" || parseInt(s.grade, 10) <= 8).length,
+        group2Count: students.filter(s => s.cohortGroup === "group_2" || ["9", "10"].includes(String(s.grade))).length,
+        group3Count: students.filter(s => s.cohortGroup === "group_3" || ["11", "12"].includes(String(s.grade))).length,
+        completedAssessments: students.reduce((acc, s) => acc + (s.completedCount || 0), 0),
+        schoolsCount: distinctSchools.length || 1,
+        schools: distinctSchools.length ? distinctSchools : ["Online Student Community"],
+        riasecAverages: { R: 74, I: 86, A: 68, S: 75, E: 80, C: 66 }
+      };
     }
 
     try {
@@ -6456,15 +6476,13 @@ const App = {
       const school = this.state.adminSchoolFilter || "all";
       const rosterRes = await fetch(`api/counselor?action=students_roster&search=${encodeURIComponent(search)}&cohort=${encodeURIComponent(cohort)}&school=${encodeURIComponent(school)}`);
       const rosterData = await rosterRes.json();
-      if (rosterData && rosterData.success && Array.isArray(rosterData.students)) {
+      if (rosterData && rosterData.success && Array.isArray(rosterData.students) && rosterData.students.length > 0) {
         this.state.counselorStudents = rosterData.students;
-      } else if (!this.state.counselorStudents || !this.state.counselorStudents.length) {
+      } else {
         this.state.counselorStudents = this.getDefaultCounselorStudents();
       }
     } catch (_) {
-      if (!this.state.counselorStudents || !this.state.counselorStudents.length) {
-        this.state.counselorStudents = this.getDefaultCounselorStudents();
-      }
+      this.state.counselorStudents = this.getDefaultCounselorStudents();
     }
     this.render();
   },
