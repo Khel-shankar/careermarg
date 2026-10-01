@@ -5263,21 +5263,37 @@ button.career-card:hover,
 }
 
 .auth-demo-banner {
-  margin-top: 6px;
-  padding: 10px 14px;
-  background: var(--marigold-soft);
-  border: 1.5px dashed var(--marigold);
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
+  margin-top: 4px;
+  padding: 12px 14px;
+  background: var(--paper-2);
+  border: 1.5px solid var(--edge);
+  border-radius: 14px;
 }
 
-.auth-demo-banner span {
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: var(--ink);
+.auth-demo-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.auth-demo-card-btn {
+  background: var(--field);
+  border: 1.5px solid var(--edge);
+  border-radius: 10px;
+  padding: 8px 10px;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+  width: 100%;
+}
+
+.auth-demo-card-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.auth-demo-card-btn:active {
+  transform: translateY(0);
 }
 
 .auth-demo-btn {
@@ -10341,8 +10357,15 @@ html, body {
 }
 
 /* ==========================================================================
+/* ==========================================================================
    2. COMPLETE RESPONSIVE NAVBAR SYSTEM (MOBILE & ALL DEVICES)
    ========================================================================== */
+@media (max-width: 860px) {
+  .landing-nav-links {
+    display: none !important;
+  }
+}
+
 @media (max-width: 768px) {
   .landing-nav {
     padding: 0 12px !important;
@@ -10367,7 +10390,7 @@ html, body {
     height: 30px !important;
   }
   .landing-nav-brand strong {
-    font-size: 1.15rem !important;
+    font-size: 1.12rem !important;
     line-height: 1 !important;
   }
   .landing-nav-brand .tag {
@@ -10453,6 +10476,46 @@ html, body {
   .btn-signout-nav .nav-btn-txt {
     display: none !important;
   }
+
+  /* Hero section & floating badges mobile positioning */
+  .landing-hero {
+    padding: 24px 12px 36px !important;
+    overflow-x: hidden !important;
+  }
+  .hero-grid-2col {
+    grid-template-columns: 1fr !important;
+    gap: 20px !important;
+  }
+  .hero-btn-group {
+    flex-direction: column !important;
+    width: 100% !important;
+  }
+  .hero-btn-group .btn {
+    width: 100% !important;
+  }
+  .hero-visual-card {
+    max-width: 100% !important;
+    padding: 20px 14px !important;
+    overflow: hidden !important;
+  }
+  .hero-floating-pill {
+    position: static !important;
+    margin: 6px auto !important;
+    transform: none !important;
+    display: inline-flex !important;
+    max-width: 95% !important;
+    justify-content: center !important;
+  }
+  .hero-floating-pill.top-left,
+  .hero-floating-pill.bottom-right,
+  .hero-floating-pill.bottom-left {
+    position: static !important;
+    transform: none !important;
+    left: auto !important;
+    right: auto !important;
+    top: auto !important;
+    bottom: auto !important;
+  }
 }
 
 @media (max-width: 520px) {
@@ -10464,7 +10527,7 @@ html, body {
     gap: 6px !important;
   }
   .landing-nav-brand strong {
-    font-size: 1.08rem !important;
+    font-size: 1.05rem !important;
   }
   .landing-nav-actions {
     gap: 4px !important;
@@ -10521,7 +10584,7 @@ html, body {
     height: 26px !important;
   }
   .landing-nav-brand strong {
-    font-size: 0.98rem !important;
+    font-size: 0.96rem !important;
   }
   .landing-nav-actions {
     gap: 3px !important;
@@ -10557,81 +10620,129 @@ html, body {
     font-size: 0.65rem !important;
   }
 }
-  
-  /* Hero section & floating badges mobile positioning */
-  .landing-hero {
-    padding: 24px 12px 36px !important;
-    overflow-x: hidden !important;
-  }
-  .hero-grid-2col {
+
+/* ==========================================================================
+   3. APP TOPBAR & STUDENT DASHBOARD RESPONSIVENESS
+   ========================================================================== */
+.home-discovery-grid {
+  display: grid;
+  grid-template-columns: 1.45fr 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .home-discovery-grid {
     grid-template-columns: 1fr !important;
     gap: 20px !important;
   }
-  .hero-btn-group {
+  .home-header-minimal {
+    padding: 18px 16px !important;
     flex-direction: column !important;
-    width: 100% !important;
+    align-items: stretch !important;
+    gap: 14px !important;
   }
-  .hero-btn-group .btn {
-    width: 100% !important;
+  .home-header-left h1 {
+    font-size: 1.5rem !important;
   }
-  .hero-visual-card {
-    max-width: 100% !important;
-    padding: 20px 14px !important;
-    overflow: hidden !important;
-  }
-  .hero-floating-pill {
-    position: static !important;
-    margin: 6px auto !important;
-    transform: none !important;
-    display: inline-flex !important;
-    max-width: 95% !important;
-    justify-content: center !important;
-  }
-  .hero-floating-pill.top-left,
-  .hero-floating-pill.bottom-right,
-  .hero-floating-pill.bottom-left {
-    position: static !important;
-    transform: none !important;
-    left: auto !important;
-    right: auto !important;
-    top: auto !important;
-    bottom: auto !important;
+  .home-header-progress {
+    text-align: left !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    background: var(--field) !important;
+    padding: 10px 14px !important;
+    border-radius: 12px !important;
+    border: 1px solid var(--edge) !important;
   }
 }
 
-/* 3. APP TOPBAR & BOTTOM NAV ON MOBILE (DEFINITIVE FIX) */
 @media (max-width: 768px) {
   .topbar {
-    padding: 8px 10px !important;
+    padding: max(6px, env(safe-area-inset-top)) 10px 6px !important;
     width: 100% !important;
     max-width: 100vw !important;
     box-sizing: border-box !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    min-height: 48px !important;
   }
   .topbar .brand {
-    font-size: 1.15rem !important;
+    font-size: 1.05rem !important;
+    font-weight: 800 !important;
+    white-space: nowrap !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
   }
   .topbar .brand-tag {
     display: none !important;
   }
   .topbar-left-group {
     min-width: 0 !important;
-    flex-shrink: 1 !important;
+    flex-shrink: 0 !important;
+  }
+  .topbar-home-btn {
+    display: none !important; /* Mobile has Home in bottom navigation bar */
   }
   .topbar-actions {
     gap: 4px !important;
     flex-shrink: 0 !important;
+    display: flex !important;
+    align-items: center !important;
   }
   .topbar-actions .pill-btn {
-    padding: 5px 7px !important;
-    font-size: 0.74rem !important;
+    padding: 0 6px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    font-size: 0.76rem !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 999px !important;
+  }
+  .topbar-saved-btn {
+    padding: 0 8px !important;
+    gap: 4px !important;
   }
   .topbar-txt {
     display: none !important;
   }
   .topbar-avatar {
-    width: 32px !important;
-    height: 32px !important;
-    font-size: 0.75rem !important;
+    width: 30px !important;
+    height: 30px !important;
+    font-size: 0.72rem !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* Journey Cards on Mobile */
+  .journey-card {
+    padding: 14px 14px !important;
+    gap: 12px !important;
+  }
+  .journey-card > div:first-child {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+  .journey-card > div:last-child {
+    width: 100% !important;
+    margin-top: 4px !important;
+  }
+  .journey-card .btn {
+    width: 100% !important;
+    justify-content: center !important;
+    display: flex !important;
+  }
+
+  /* Home Side & Saved Vault on Mobile */
+  .home-side {
+    width: 100% !important;
+  }
+  .home-side .card {
+    padding: 16px 14px !important;
+  }
+  .mini-match {
+    padding: 10px 12px !important;
   }
 
   /* CRITICAL: Full-width, non-shifted Bottom Nav Bar */
@@ -10702,9 +10813,34 @@ html, body {
     max-width: 100% !important;
   }
   
-  /* Give main pane bottom padding so bottom-nav doesn't overlap content */
-  .app-shell:not(.no-nav) .main-pane {
-    padding-bottom: 78px !important;
+  /* Give main pane and screen bottom padding so bottom-nav doesn't overlap content */
+  .app-shell:not(.no-nav) .main-pane,
+  .screen {
+    padding-bottom: 84px !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .topbar {
+    padding: max(4px, env(safe-area-inset-top)) 8px 4px !important;
+    min-height: 44px !important;
+  }
+  .topbar .brand {
+    font-size: 0.96rem !important;
+  }
+  .topbar-actions {
+    gap: 3px !important;
+  }
+  .topbar-actions .pill-btn {
+    height: 28px !important;
+    min-width: 28px !important;
+    font-size: 0.72rem !important;
+    padding: 0 4px !important;
+  }
+  .topbar-avatar {
+    width: 26px !important;
+    height: 26px !important;
+    font-size: 0.68rem !important;
   }
 }
 
@@ -12339,6 +12475,132 @@ html, body {
   .btn-wiki-cta {
     width: 100%;
     justify-content: center;
+  }
+}
+
+/* ==========================================================================
+   ENHANCED 3-COHORT FRAMEWORK & ADMIN PORTAL STYLING
+   ========================================================================== */
+
+.demo-role-card {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.demo-role-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  border-color: var(--teal) !important;
+}
+
+.demo-role-card:active {
+  transform: translateY(-1px);
+}
+
+.stage-showcase-card {
+  transition: all 0.22s ease;
+}
+
+.stage-showcase-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 28px rgba(0,0,0,0.08);
+}
+
+.admin-student-row:hover {
+  background: var(--field);
+}
+
+.journey-card {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.journey-card:hover:not(.locked) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.06);
+}
+
+.mini-match:hover {
+  background: var(--card) !important;
+  border-color: var(--teal) !important;
+  transform: translateX(4px);
+}
+
+/* Enhanced Auth Modal Responsiveness for All Screen Sizes */
+@media (max-width: 580px) {
+  .auth-backdrop {
+    padding: 12px 10px;
+    align-items: flex-end;
+  }
+  .auth-modal {
+    max-width: 100%;
+    max-height: 94vh;
+    padding: 22px 16px 18px;
+    border-radius: 20px 20px 0 0;
+    margin-bottom: 0;
+    box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.25);
+  }
+  .auth-header {
+    margin-bottom: 14px;
+  }
+  .auth-header h2 {
+    font-size: 1.35rem;
+  }
+  .auth-header p {
+    font-size: 0.8rem;
+  }
+  .auth-tabs {
+    margin-bottom: 14px;
+    gap: 4px;
+    padding: 3px;
+  }
+  .auth-tab {
+    padding: 8px 10px;
+    font-size: 0.82rem;
+  }
+  .auth-demo-banner {
+    padding: 10px 12px;
+    margin-bottom: 12px;
+  }
+  .auth-demo-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  .auth-demo-card-btn {
+    padding: 7px 8px;
+  }
+  .auth-demo-card-btn strong {
+    font-size: 0.76rem !important;
+  }
+  .auth-demo-card-btn div {
+    font-size: 0.68rem !important;
+  }
+  .auth-input-wrap input {
+    padding: 10px 12px;
+    font-size: 0.9rem;
+  }
+  .auth-submit-btn {
+    padding: 11px 16px;
+    font-size: 0.9rem;
+  }
+}
+
+/* Printable Official PDF view adjustments */
+@media print {
+  .topbar, .site-nav, .report-actions, .report-footer-actions, .demo-switcher-btn, .btn, button {
+    display: none !important;
+  }
+
+  .screen, #report-print {
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .printable-report-card {
+    border: none !important;
+    padding: 0 !important;
+    box-shadow: none !important;
   }
 }
 

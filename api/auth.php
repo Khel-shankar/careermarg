@@ -104,52 +104,192 @@ function buildUserResponse($user, $pdo, $message = "Success") {
     ];
 }
 
-if ($action === 'demo_counselor') {
+if ($action === 'demo_admin' || $action === 'demo_counselor') {
+    $adminData = [
+        "id" => "admin_demo",
+        "name" => "Dr. Sunita Rao",
+        "email" => "admin@careermarg.org",
+        "role" => "school_admin",
+        "grade" => "CDGC Admin"
+    ];
+    $adminProfile = [
+        "name" => "Dr. Sunita Rao",
+        "grade" => "CDGC Admin",
+        "school" => "Career Development & Guidance Cell (Central)",
+        "city" => "New Delhi",
+        "stream" => "general"
+    ];
+
     if (!$pdo) {
         echo json_encode([
             "success" => true,
             "offline" => true,
-            "message" => "Demo Counselor Mode (Offline)",
-            "auth" => [
-                "id" => "counselor_demo",
-                "name" => "Dr. Sunita Sharma",
-                "email" => "counselor@careermarg.org",
-                "role" => "counselor",
-                "grade" => "Faculty Head"
-            ],
-            "profile" => [
-                "name" => "Dr. Sunita Sharma",
-                "grade" => "Faculty Head",
-                "school" => "CareerMarg Central Counseling Cell",
-                "city" => "New Delhi",
-                "stream" => "general"
-            ]
+            "message" => "Admin Demo Mode (Offline)",
+            "auth" => $adminData,
+            "profile" => $adminProfile
         ]);
         exit();
     }
 
     try {
-        $stmt = $pdo->prepare("SELECT * FROM `users` WHERE `id` = 'counselor_demo' OR `email` = 'counselor@careermarg.org'");
+        $stmt = $pdo->prepare("SELECT * FROM `users` WHERE `id` = 'admin_demo' OR `email` = 'admin@careermarg.org'");
         $stmt->execute();
         $user = $stmt->fetch();
 
         if (!$user) {
-            $passHash = password_hash('counselor123', PASSWORD_DEFAULT);
+            $passHash = password_hash('admin123', PASSWORD_DEFAULT);
             $ins = $pdo->prepare("
                 INSERT INTO `users` (`id`, `role`, `email`, `password_hash`, `full_name`, `grade_level`, `school_name`, `city`, `stream`)
-                VALUES ('counselor_demo', 'counselor', 'counselor@careermarg.org', ?, 'Dr. Sunita Sharma', 'Faculty Head', 'CareerMarg Central Counseling Cell', 'New Delhi', 'general')
+                VALUES ('admin_demo', 'school_admin', 'admin@careermarg.org', ?, 'Dr. Sunita Rao', 'CDGC Admin', 'Career Development & Guidance Cell (Central)', 'New Delhi', 'general')
             ");
             $ins->execute([$passHash]);
             $stmt->execute();
             $user = $stmt->fetch();
         }
 
-        echo json_encode(buildUserResponse($user, $pdo, "🎓 Signed in as Chief Counselor!"));
+        echo json_encode(buildUserResponse($user, $pdo, "⚡ Signed in as CDGC Guidance Admin!"));
         exit();
     } catch (\PDOException $e) {
         echo json_encode(["success" => false, "message" => "Database error: " . $e->getMessage()]);
         exit();
     }
+}
+
+// DEMO: Group I Student (Classes 6-8: Discovery Stage - RIASEC Only)
+if ($action === 'demo_group1') {
+    $g1User = [
+        "id" => "usr_demo_group1",
+        "name" => "Ananya Sharma",
+        "email" => "ananya.class7@careermarg.org",
+        "role" => "student",
+        "grade" => "7"
+    ];
+    $g1Profile = [
+        "name" => "Ananya Sharma",
+        "grade" => "7",
+        "educationLevel" => "class_7",
+        "school" => "Kendriya Vidyalaya No. 1",
+        "city" => "Jaipur",
+        "stream" => "general",
+        "workStyle" => "creative",
+        "aspiration" => "Wants to explore science and creative arts",
+        "interestTags" => ["arts", "science"]
+    ];
+    $g1Scores = [
+        "riasec" => ["I" => 84, "A" => 80, "S" => 66, "R" => 54, "E" => 48, "C" => 42],
+        "all" => ["I" => 84, "A" => 80, "S" => 66, "R" => 54, "E" => 48, "C" => 42]
+    ];
+    $g1Matches = ["ui_ux_designer", "data_scientist", "robotics_engineer"];
+
+    echo json_encode([
+        "success" => true,
+        "message" => "🌱 Group I (Class 7) Student Demo loaded!",
+        "auth" => $g1User,
+        "profile" => $g1Profile,
+        "completedTiers" => ["tier1_riasec"],
+        "traitScores" => $g1Scores,
+        "savedCareers" => $g1Matches,
+        "careerMatches" => $g1Matches
+    ]);
+    exit();
+}
+
+// DEMO: Group II Student (Classes 9-10: Exploration Stage - RIASEC + TAMANNA Aptitude)
+if ($action === 'demo_group2') {
+    $g2User = [
+        "id" => "usr_demo_group2",
+        "name" => "Rohan Verma",
+        "email" => "rohan.class10@careermarg.org",
+        "role" => "student",
+        "grade" => "10"
+    ];
+    $g2Profile = [
+        "name" => "Rohan Verma",
+        "grade" => "10",
+        "educationLevel" => "class_10",
+        "school" => "Delhi Public School",
+        "city" => "New Delhi",
+        "stream" => "science_pcm",
+        "workStyle" => "analytical",
+        "aspiration" => "Interested in Engineering and Aerospace",
+        "interestTags" => ["technology", "engineering", "robotics"]
+    ];
+    $g2Scores = [
+        "riasec" => ["R" => 88, "I" => 85, "E" => 68, "C" => 55, "S" => 50, "A" => 44],
+        "tamanna" => [
+            "spatial" => 90, "numerical" => 86, "logical" => 84, "mechanical" => 82, 
+            "perceptual" => 76, "verbal" => 72, "language" => 70
+        ],
+        "all" => [
+            "R" => 88, "I" => 85, "E" => 68, "C" => 55, "S" => 50, "A" => 44,
+            "spatial" => 90, "numerical" => 86, "logical" => 84, "mechanical" => 82, 
+            "perceptual" => 76, "verbal" => 72, "language" => 70
+        ]
+    ];
+    $g2Matches = ["robotics_engineer", "aerospace_engineer", "data_scientist"];
+
+    echo json_encode([
+        "success" => true,
+        "message" => "🧭 Group II (Class 10) Student Demo loaded!",
+        "auth" => $g2User,
+        "profile" => $g2Profile,
+        "completedTiers" => ["tier1_riasec", "tier2_tamanna"],
+        "traitScores" => $g2Scores,
+        "savedCareers" => $g2Matches,
+        "careerMatches" => $g2Matches
+    ]);
+    exit();
+}
+
+// DEMO: Group III Student (Classes 11-12: Decision Stage - RIASEC + TAMANNA + OCEAN)
+if ($action === 'demo_group3') {
+    $g3User = [
+        "id" => "usr_demo_group3",
+        "name" => "Priya Patel",
+        "email" => "priya.class12@careermarg.org",
+        "role" => "student",
+        "grade" => "12"
+    ];
+    $g3Profile = [
+        "name" => "Priya Patel",
+        "grade" => "12",
+        "educationLevel" => "class_12",
+        "school" => "St. Xavier's Senior Secondary School",
+        "city" => "Mumbai",
+        "stream" => "commerce_maths",
+        "workStyle" => "collaborative",
+        "aspiration" => "Aspiring to pursue Finance & Management",
+        "interestTags" => ["finance", "management", "consulting"]
+    ];
+    $g3Scores = [
+        "riasec" => ["E" => 90, "S" => 86, "C" => 78, "I" => 72, "A" => 60, "R" => 45],
+        "tamanna" => [
+            "verbal" => 92, "language" => 88, "logical" => 85, "numerical" => 82, 
+            "perceptual" => 80, "spatial" => 70, "mechanical" => 65
+        ],
+        "ocean" => [
+            "O" => 88, "C" => 86, "E" => 84, "A" => 85, "N" => 25
+        ],
+        "all" => [
+            "E" => 90, "S" => 86, "C" => 78, "I" => 72, "A" => 60, "R" => 45,
+            "verbal" => 92, "language" => 88, "logical" => 85, "numerical" => 82, 
+            "perceptual" => 80, "spatial" => 70, "mechanical" => 65,
+            "O" => 88, "C" => 86, "E" => 84, "A" => 85, "N" => 25
+        ]
+    ];
+    $g3Matches = ["investment_banker", "management_consultant", "chartered_accountant"];
+
+    echo json_encode([
+        "success" => true,
+        "message" => "🎓 Group III (Class 12) Student Demo loaded!",
+        "auth" => $g3User,
+        "profile" => $g3Profile,
+        "completedTiers" => ["tier1_riasec", "tier2_tamanna", "tier3_ocean"],
+        "traitScores" => $g3Scores,
+        "savedCareers" => $g3Matches,
+        "careerMatches" => $g3Matches
+    ]);
+    exit();
 }
 
 if ($action === 'signup') {

@@ -104,6 +104,15 @@ const App = {
     completedTiers: [],
     traitScores: {},
     shuffleSeed: 0,
+    adminStats: null,
+    adminStudents: [],
+    adminSearch: "",
+    adminCohortFilter: "all",
+    adminSchoolFilter: "all",
+    adminSelectedStudent: null,
+    adminModalOpen: false,
+    adminSubTab: "dashboard",
+    adminLoading: false,
     counselorStats: null,
     counselorStudents: [],
     counselorSearch: "",
@@ -143,9 +152,13 @@ const App = {
     compareIds: [],
   },
 
-  isCounselor() {
+  isAdmin() {
     const role = String(this.state.auth?.role || "").toLowerCase();
-    return role === "counselor" || role === "teacher" || role === "faculty" || role === "school_admin";
+    return role === "school_admin" || role === "admin" || role === "counselor" || role === "teacher" || role === "faculty";
+  },
+
+  isCounselor() {
+    return this.isAdmin();
   },
 
   setSector(secId) {
@@ -221,12 +234,46 @@ const App = {
         return;
       }
 
-      // Counselor Demo Login Button
-      const demoCounselorBtn = e.target.closest("[data-demo-counselor-login]");
-      if (demoCounselorBtn) {
+      // Demo Switcher triggers (Group I, II, III & Admin)
+      const demoG1Btn = e.target.closest("[data-demo-group1]");
+      if (demoG1Btn) {
         e.preventDefault();
         e.stopPropagation();
-        this.handleDemoCounselorLogin();
+        this.handleDemoGroup1();
+        return;
+      }
+
+      const demoG2Btn = e.target.closest("[data-demo-group2]");
+      if (demoG2Btn) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.handleDemoGroup2();
+        return;
+      }
+
+      const demoG3Btn = e.target.closest("[data-demo-group3]");
+      if (demoG3Btn) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.handleDemoGroup3();
+        return;
+      }
+
+      const demoAdminBtn = e.target.closest("[data-demo-admin], [data-demo-counselor-login]");
+      if (demoAdminBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.handleDemoAdmin();
+        return;
+      }
+
+      const openDemoSwitcherBtn = e.target.closest("[data-open-demo-switcher]");
+      if (openDemoSwitcherBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.state.authModalOpen = true;
+        this.state.authModalTab = "signin";
+        this.render();
         return;
       }
 
@@ -1245,23 +1292,110 @@ const App = {
     this.render();
   },
 
-  async handleDemoCounselorLogin() {
+  async handleDemoGroup1() {
     try {
-      const res = await fetch("api/auth.php?action=demo_counselor", { method: "POST" });
+      const res = await fetch("api/auth.php?action=demo_group1", { method: "POST" });
+      const data = await res.json();
+      if (data && data.success) {
+        this.state.auth = data.auth;
+        this.state.profile = { ...this.state.profile, ...data.profile };
+        this.state.completedTiers = ["tier1_riasec"];
+        this.state.traitScores = data.traitScores?.all || { I: 84, A: 80, S: 66, R: 54, E: 48, C: 42 };
+        this.state.savedCareers = data.savedCareers || ["ui_ux_designer", "data_scientist", "robotics_engineer"];
+        this.state.authModalOpen = false;
+        this.save();
+        this.toast(this.t("🌱 Loaded Group I (Class 7 · Ananya Sharma) · 1 Assessment Mode", "🌱 ग्रुप I (कक्षा 7वीं · अनन्या शर्मा) लोड हुआ · 1 असेसमेंट मोड"));
+        this.go("home");
+        return;
+      }
+    } catch (_) {}
+
+    this.state.auth = { id: "usr_demo_group1", name: "Ananya Sharma", email: "ananya.class7@careermarg.org", role: "student", grade: "7" };
+    this.state.profile = { name: "Ananya Sharma", grade: "7", educationLevel: "class_7", school: "Kendriya Vidyalaya No. 1", city: "Jaipur", stream: "general", workStyle: "creative", aspiration: "Wants to explore science and creative arts" };
+    this.state.completedTiers = ["tier1_riasec"];
+    this.state.traitScores = { I: 84, A: 80, S: 66, R: 54, E: 48, C: 42, R: 54, I: 84, A: 80, S: 66, E: 48, C: 42 };
+    this.state.savedCareers = ["ui_ux_designer", "data_scientist", "robotics_engineer"];
+    this.state.authModalOpen = false;
+    this.save();
+    this.toast(this.t("🌱 Loaded Group I (Class 7 · Ananya Sharma) · 1 Assessment Mode", "🌱 ग्रुप I (कक्षा 7वीं · अनन्या शर्मा) लोड हुआ · 1 असेसमेंट मोड"));
+    this.go("home");
+  },
+
+  async handleDemoGroup2() {
+    try {
+      const res = await fetch("api/auth.php?action=demo_group2", { method: "POST" });
+      const data = await res.json();
+      if (data && data.success) {
+        this.state.auth = data.auth;
+        this.state.profile = { ...this.state.profile, ...data.profile };
+        this.state.completedTiers = ["tier1_riasec", "tier2_tamanna"];
+        this.state.traitScores = data.traitScores?.all || { R: 88, I: 85, E: 68, C: 55, S: 50, A: 44, spatial: 90, numerical: 86, logical: 84, mechanical: 82, perceptual: 76, verbal: 72, language: 70 };
+        this.state.savedCareers = data.savedCareers || ["robotics_engineer", "aerospace_engineer", "data_scientist"];
+        this.state.authModalOpen = false;
+        this.save();
+        this.toast(this.t("🧭 Loaded Group II (Class 10 · Rohan Verma) · 2 Assessments Mode", "🧭 ग्रुप II (कक्षा 10वीं · रोहन वर्मा) लोड हुआ · 2 असेसमेंट मोड"));
+        this.go("home");
+        return;
+      }
+    } catch (_) {}
+
+    this.state.auth = { id: "usr_demo_group2", name: "Rohan Verma", email: "rohan.class10@careermarg.org", role: "student", grade: "10" };
+    this.state.profile = { name: "Rohan Verma", grade: "10", educationLevel: "class_10", school: "Delhi Public School", city: "New Delhi", stream: "science_pcm", workStyle: "analytical", aspiration: "Interested in Engineering and Aerospace" };
+    this.state.completedTiers = ["tier1_riasec", "tier2_tamanna"];
+    this.state.traitScores = { R: 88, I: 85, E: 68, C: 55, S: 50, A: 44, spatial: 90, numerical: 86, logical: 84, mechanical: 82, perceptual: 76, verbal: 72, language: 70, TAMANNA_SA: 90, TAMANNA_NA: 86, TAMANNA_AR: 84, TAMANNA_MA: 82, TAMANNA_PA: 76, TAMANNA_VA: 72, TAMANNA_LA: 70 };
+    this.state.savedCareers = ["robotics_engineer", "aerospace_engineer", "data_scientist"];
+    this.state.authModalOpen = false;
+    this.save();
+    this.toast(this.t("🧭 Loaded Group II (Class 10 · Rohan Verma) · 2 Assessments Mode", "🧭 ग्रुप II (कक्षा 10वीं · रोहन वर्मा) लोड हुआ · 2 असेसमेंट मोड"));
+    this.go("home");
+  },
+
+  async handleDemoGroup3() {
+    try {
+      const res = await fetch("api/auth.php?action=demo_group3", { method: "POST" });
+      const data = await res.json();
+      if (data && data.success) {
+        this.state.auth = data.auth;
+        this.state.profile = { ...this.state.profile, ...data.profile };
+        this.state.completedTiers = ["tier1_riasec", "tier2_tamanna", "tier3_ocean"];
+        this.state.traitScores = data.traitScores?.all || { E: 90, S: 86, C: 78, I: 72, A: 60, R: 45, verbal: 92, language: 88, logical: 85, numerical: 82, perceptual: 80, spatial: 70, mechanical: 65, O: 88, C: 86, E: 84, A: 85, N: 25 };
+        this.state.savedCareers = data.savedCareers || ["investment_banker", "management_consultant", "chartered_accountant"];
+        this.state.authModalOpen = false;
+        this.save();
+        this.toast(this.t("🎓 Loaded Group III (Class 12 · Priya Patel) · 3 Assessments Mode", "🎓 ग्रुप III (कक्षा 12वीं · प्रिया पटेल) लोड हुआ · 3 असेसमेंट मोड"));
+        this.go("home");
+        return;
+      }
+    } catch (_) {}
+
+    this.state.auth = { id: "usr_demo_group3", name: "Priya Patel", email: "priya.class12@careermarg.org", role: "student", grade: "12" };
+    this.state.profile = { name: "Priya Patel", grade: "12", educationLevel: "class_12", school: "St. Xavier's Senior Secondary School", city: "Mumbai", stream: "commerce_maths", workStyle: "collaborative", aspiration: "Aspiring to pursue Finance & Management" };
+    this.state.completedTiers = ["tier1_riasec", "tier2_tamanna", "tier3_ocean"];
+    this.state.traitScores = { E: 90, S: 86, C: 78, I: 72, A: 60, R: 45, verbal: 92, language: 88, logical: 85, numerical: 82, perceptual: 80, spatial: 70, mechanical: 65, TAMANNA_VA: 92, TAMANNA_LA: 88, TAMANNA_AR: 85, TAMANNA_NA: 82, TAMANNA_PA: 80, TAMANNA_SA: 70, TAMANNA_MA: 65, OCEAN_O: 88, OCEAN_C: 86, OCEAN_E: 84, OCEAN_A: 85, OCEAN_N: 25 };
+    this.state.savedCareers = ["investment_banker", "management_consultant", "chartered_accountant"];
+    this.state.authModalOpen = false;
+    this.save();
+    this.toast(this.t("🎓 Loaded Group III (Class 12 · Priya Patel) · 3 Assessments Mode", "🎓 ग्रुप III (कक्षा 12वीं · प्रिया पटेल) लोड हुआ · 3 असेसमेंट मोड"));
+    this.go("home");
+  },
+
+  async handleDemoAdmin() {
+    try {
+      const res = await fetch("api/auth.php?action=demo_admin", { method: "POST" });
       const data = await res.json();
       if (data && data.success) {
         this.state.auth = data.auth;
         this.state.profile = {
           name: data.auth.name,
           email: data.auth.email,
-          role: "counselor",
-          school: "Kendriya Vidyalaya & Affiliated Cluster",
+          role: "school_admin",
+          school: "Career Development & Guidance Cell (Central)",
           city: "New Delhi",
-          grade: "All Grades (6-12)",
+          grade: "CDGC Admin"
         };
         this.state.authModalOpen = false;
         this.save();
-        this.toast(this.t(`🎓 Welcome Counselor ${data.auth.name}! Opening Counselor Suite...`, `🎓 स्वागत है परामर्शदाता ${data.auth.name}! परामर्शदाता कक्ष खुल रहा है...`));
+        this.toast(this.t(`⚡ Welcome CDGC Admin ${data.auth.name}! Opening Admin Dashboard...`, `⚡ स्वागत है एडमिन ${data.auth.name}! एडमिन डैशबोर्ड खुल रहा है...`));
         await this.loadCounselorDashboard();
         this.go("counselor");
         return;
@@ -1269,56 +1403,33 @@ const App = {
     } catch (_) {}
 
     this.state.auth = {
-      id: "usr-counselor-1",
-      name: "Dr. Sunita Sharma",
-      email: "counselor@careermarg.org",
-      role: "counselor",
-      title: "Senior Career Guidance Counselor"
+      id: "admin_demo",
+      name: "Dr. Sunita Rao",
+      email: "admin@careermarg.org",
+      role: "school_admin",
+      grade: "CDGC Admin"
     };
     this.state.profile = {
-      name: "Dr. Sunita Sharma",
-      email: "counselor@careermarg.org",
-      role: "counselor",
-      school: "Kendriya Vidyalaya & Affiliated Cluster",
+      name: "Dr. Sunita Rao",
+      email: "admin@careermarg.org",
+      role: "school_admin",
+      school: "Career Development & Guidance Cell (Central)",
       city: "New Delhi",
-      grade: "All Grades (6-12)"
+      grade: "CDGC Admin"
     };
     this.state.authModalOpen = false;
     this.save();
-    this.toast(this.t("🎓 Signed in as Dr. Sunita Sharma (Counselor)", "🎓 डॉ. सुनीता शर्मा (परामर्शदाता) के रूप में साइन इन"));
+    this.toast(this.t("⚡ Signed in as Dr. Sunita Rao (CDGC Guidance Admin)", "⚡ डॉ. सुनीता राव (सीडीजीसी गाइडेंस एडमिन) के रूप में साइन इन"));
     this.loadCounselorDashboard();
     this.go("counselor");
   },
 
-  async handleDemoLogin() {
-    try {
-      const res = await fetch("api/auth.php?action=signin", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: "student@careermarg.org", password: "demo" })
-      });
-      const data = await res.json();
-      if (data && data.success) {
-        this.state.auth = data.auth;
-        if (data.profile) this.state.profile = { ...this.state.profile, ...data.profile };
-        if (Array.isArray(data.savedCareers)) this.state.savedCareers = Array.from(new Set(data.savedCareers));
-        if (Array.isArray(data.completedTiers)) this.state.completedTiers = Array.from(new Set(data.completedTiers));
-        if (data.tierAnswers) this.state.tierAnswers = { ...this.state.tierAnswers, ...data.tierAnswers };
-        if (data.traitScores) this.state.traitScores = { ...this.state.traitScores, ...data.traitScores };
-      }
-    } catch (_) {}
+  handleDemoCounselorLogin() {
+    return this.handleDemoAdmin();
+  },
 
-    this.state.auth = {
-      id: "usr-demo-1",
-      name: "Rahul Sharma",
-      email: "rahul.student@gmail.com",
-      role: "student",
-      grade: "10"
-    };
-    this.state.authModalOpen = false;
-    this.save();
-    this.toast(this.t("👋 Welcome back Rahul! Demo student loaded.", "👋 नमस्ते राहुल! डेमो विद्यार्थी लोड हो गया।"));
-    this.go("home");
+  handleDemoLogin() {
+    return this.handleDemoGroup2();
   },
 
   go(route) {
@@ -2678,6 +2789,7 @@ const App = {
   landingNavbar() {
     const auth = this.state.auth;
     const isHi = this.state.lang === "hi";
+    const isAdm = this.isAdmin();
     return `
       <header class="landing-nav" id="landing-navbar">
         <a href="#welcome" class="landing-nav-brand">
@@ -2689,16 +2801,17 @@ const App = {
         </a>
 
         <ul class="landing-nav-links">
-          <li><a href="#features">${this.t("Pillars", "मूल्यांकन")}</a></li>
-          <li><a href="#how-it-works">${this.t("How It Works", "प्रक्रिया")}</a></li>
-          <li><a href="#compare-feature">${this.t("Compare Tool", "करियर तुलना")}</a></li>
-          <li><a href="#careers">${this.t("100+ Careers", "करियर खोजें")}</a></li>
+          <li><a href="#features">${this.t("3-Stage Framework", "3-स्तरीय ढाँचा")}</a></li>
+          <li><a href="#how-it-works">${this.t("Assessment Journey", "मूल्यांकन यात्रा")}</a></li>
+          <li><a href="#careers">${this.t("Career Library", "करियर सूची")}</a></li>
           <li><a href="#why-us">${this.t("Why Us", "विशेषताएँ")}</a></li>
-          <li><a href="#testimonials">${this.t("Reviews", "समीक्षा")}</a></li>
           <li><a href="#faq">${this.t("FAQs", "प्रश्न")}</a></li>
         </ul>
 
         <div class="landing-nav-actions">
+          <button class="pill-btn demo-nav-trigger" type="button" data-open-demo-switcher="1" style="background:rgba(224,159,62,0.15);border:1.5px solid var(--marigold);color:var(--ink);font-weight:800;" title="${this.t("Quick Role Switcher for Live Demo", "डेमो रोल स्विचर")}">
+            ⚡ <span class="nav-btn-txt">${this.t("Demo Switcher", "डेमो स्विचर")}</span>
+          </button>
           <button class="pill-btn theme-toggle ${this.state.theme === "dark" ? "active" : ""}" type="button" data-theme-toggle="1" title="${this.state.theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}">
             ${this.state.theme === "dark" ? "☀️ <span class=\"nav-btn-txt\">" + this.t("Light", "लाइट") + "</span>" : "🌙 <span class=\"nav-btn-txt\">" + this.t("Dark", "डार्क") + "</span>"}
           </button>
@@ -2709,16 +2822,16 @@ const App = {
           ${
             auth
               ? `
-            <div class="user-nav-badge" title="${this.escape(auth.name)} (${auth.role === "counselor" ? this.t("Career Counselor", "करियर परामर्शदाता") : this.t("Class", "कक्षा") + " " + (auth.grade || this.state.profile.grade || "10")})">
+            <div class="user-nav-badge" title="${this.escape(auth.name)} (${isAdm ? this.t("CDGC Admin", "सीडीजीसी एडमिन") : this.t("Class", "कक्षा") + " " + (auth.grade || this.state.profile.grade || "10")})">
               <div class="avatar">${this.initials()}</div>
               <div class="user-nav-info">
                 <span class="uname">${this.escape(auth.name)}</span>
-                <span class="ugrade">${auth.role === "counselor" ? this.t("Counselor", "परामर्शदाता") : `${this.t("Class", "कक्षा")} ${auth.grade || this.state.profile.grade || "10"}`}</span>
+                <span class="ugrade">${isAdm ? this.t("Admin", "एडमिन") : `${this.t("Class", "कक्षा")} ${auth.grade || this.state.profile.grade || "10"}`}</span>
               </div>
               <button type="button" class="btn-signout-nav" data-auth-logout="1" title="${this.t("Sign Out", "लॉगआउट")}">🚪 <span class="nav-btn-txt">${this.t("Logout", "लॉगआउट")}</span></button>
             </div>
-            <button type="button" class="btn-auth-nav primary nav-btn-dash" data-go="${auth.role === "counselor" ? "counselor" : "home"}" title="${auth.role === "counselor" ? this.t("Counselor Portal", "काउंसलर पोर्टल") : this.t("Dashboard", "डैशबोर्ड")}">
-              <span class="dash-btn-full">${auth.role === "counselor" ? this.t("Counselor Portal", "काउंसलर पोर्टल") : this.t("Dashboard", "डैशबोर्ड")} →</span>
+            <button type="button" class="btn-auth-nav primary nav-btn-dash" data-go="${isAdm ? "counselor" : "home"}" title="${isAdm ? this.t("Admin Panel", "एडमिन पोर्टल") : this.t("Dashboard", "डैशबोर्ड")}">
+              <span class="dash-btn-full">${isAdm ? this.t("Admin Panel", "एडमिन पोर्टल") : this.t("Dashboard", "डैशबोर्ड")} →</span>
               <span class="dash-btn-short">${this.t("Portal", "पोर्टल")} →</span>
             </button>
           `
@@ -2737,9 +2850,65 @@ const App = {
   },
 
   signInFormHtml() {
-    const isPassVis = this._passVis_si === true;
     return `
       <div class="auth-form" id="auth-signin-form">
+        <!-- 4 QUICK DEMO CARDS ACCORDING TO SPECS -->
+        <div class="auth-demo-banner" style="background:var(--paper-2);border:1.5px solid var(--edge);border-radius:14px;padding:12px 14px;margin-bottom:14px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:4px;">
+            <strong style="font-size:0.82rem;color:var(--ink);display:flex;align-items:center;gap:6px;">
+              ⚡ ${this.t("Quick 1-Click Demo Login", "त्वरित 1-क्लिक डेमो लॉगिन")}
+            </strong>
+            <span class="badge-grade" style="font-size:0.68rem;background:var(--marigold-soft);color:var(--ink);border:1px solid var(--marigold);padding:1px 6px;border-radius:6px;font-weight:700;">NEP 2020</span>
+          </div>
+
+          <div class="auth-demo-grid" style="display:grid;grid-template-columns:repeat(2, 1fr);gap:8px;">
+            <button type="button" class="auth-demo-card-btn" data-demo-group1="1" style="background:var(--field);border:1.5px solid var(--marigold);border-radius:10px;padding:8px;text-align:left;cursor:pointer;transition:all 0.2s;display:flex;flex-direction:column;justify-content:center;">
+              <div style="display:flex;align-items:center;gap:5px;margin-bottom:2px;">
+                <span style="font-size:1rem">🌱</span>
+                <strong style="font-size:0.8rem;color:var(--ink);white-space:nowrap;">Group I</strong>
+                <span style="font-size:0.7rem;color:var(--ink-soft);font-weight:700;">(Cl. 7)</span>
+              </div>
+              <div style="font-size:0.72rem;color:var(--ink-soft);line-height:1.2;">
+                ${this.t("Ananya · Discovery (RIASEC)", "अनन्या · डिस्कवरी (रुचि)")}
+              </div>
+            </button>
+
+            <button type="button" class="auth-demo-card-btn" data-demo-group2="1" style="background:var(--field);border:1.5px solid var(--teal);border-radius:10px;padding:8px;text-align:left;cursor:pointer;transition:all 0.2s;display:flex;flex-direction:column;justify-content:center;">
+              <div style="display:flex;align-items:center;gap:5px;margin-bottom:2px;">
+                <span style="font-size:1rem">🧭</span>
+                <strong style="font-size:0.8rem;color:var(--ink);white-space:nowrap;">Group II</strong>
+                <span style="font-size:0.7rem;color:var(--ink-soft);font-weight:700;">(Cl. 10)</span>
+              </div>
+              <div style="font-size:0.72rem;color:var(--ink-soft);line-height:1.2;">
+                ${this.t("Rohan · Exploration (TAMANNA)", "रोहन · एक्सप्लोरेशन (तमन्ना)")}
+              </div>
+            </button>
+
+            <button type="button" class="auth-demo-card-btn" data-demo-group3="1" style="background:var(--field);border:1.5px solid var(--azure, #38bdf8);border-radius:10px;padding:8px;text-align:left;cursor:pointer;transition:all 0.2s;display:flex;flex-direction:column;justify-content:center;">
+              <div style="display:flex;align-items:center;gap:5px;margin-bottom:2px;">
+                <span style="font-size:1rem">🎓</span>
+                <strong style="font-size:0.8rem;color:var(--ink);white-space:nowrap;">Group III</strong>
+                <span style="font-size:0.7rem;color:var(--ink-soft);font-weight:700;">(Cl. 12)</span>
+              </div>
+              <div style="font-size:0.72rem;color:var(--ink-soft);line-height:1.2;">
+                ${this.t("Priya · Decision (Big 5)", "प्रिया · डिसीजन (बिग 5)")}
+              </div>
+            </button>
+
+            <button type="button" class="auth-demo-card-btn" data-demo-admin="1" style="background:rgba(13,148,136,0.08);border:1.5px solid var(--counselor-teal);border-radius:10px;padding:8px;text-align:left;cursor:pointer;transition:all 0.2s;display:flex;flex-direction:column;justify-content:center;">
+              <div style="display:flex;align-items:center;gap:5px;margin-bottom:2px;">
+                <span style="font-size:1rem">⚡</span>
+                <strong style="font-size:0.8rem;color:var(--counselor-teal);white-space:nowrap;">Admin Portal</strong>
+              </div>
+              <div style="font-size:0.72rem;color:var(--ink-soft);line-height:1.2;">
+                ${this.t("Dr. Sunita · School Analytics", "डॉ. सुनीता · एनालिटिक्स")}
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <div class="auth-divider" style="margin:8px 0 14px"><span>${this.t("or enter credentials", "या क्रेडेंशियल दर्ज करें")}</span></div>
+
         <div class="field" style="margin:0">
           <label>${this.t("Email Address or Mobile Number", "ईमेल पता या मोबाइल नंबर")}</label>
           <div class="auth-input-wrap">
@@ -2762,25 +2931,6 @@ const App = {
         </div>
 
         <button type="button" id="auth-si-submit" class="auth-submit-btn">${this.t("Sign In to CareerMarg", "CareerMarg में साइन इन करें")} →</button>
-
-        <div class="auth-demo-banner" style="display:flex;flex-direction:column;gap:8px;">
-          <div style="font-weight:700;font-size:0.8rem;color:var(--ink);">⚡ ${this.t("Instant One-Click Demo Access:", "त्वरित एक-क्लिक डेमो लॉगिन:")}</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-            <button type="button" class="auth-demo-btn" data-demo-login="1" style="width:100%;font-size:0.76rem;padding:8px 6px;">
-              🎓 ${this.t("Student (Rahul · 10th)", "विद्यार्थी (राहुल · 10वीं)")}
-            </button>
-            <button type="button" class="auth-demo-btn" data-demo-counselor-login="1" style="width:100%;font-size:0.76rem;padding:8px 6px;background:rgba(13,148,136,0.12);color:var(--counselor-teal);border-color:rgba(13,148,136,0.35);">
-              🧑‍🏫 ${this.t("Counselor (Dr. Sunita)", "परामर्शदाता (डॉ. सुनीता)")}
-            </button>
-          </div>
-        </div>
-
-        <div class="auth-divider"><span>${this.t("or continue with", "या इसके साथ जारी रखें")}</span></div>
-
-        <button type="button" class="auth-google-btn" data-open-google-chooser="1">
-          <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"/><path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.98 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/><path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/></svg>
-          <span>${this.t("Sign In with Google", "Google से साइन इन करें")}</span>
-        </button>
 
         <div class="auth-footer-toggle">
           ${this.t("Don't have an account?", "खाता नहीं है?")} <button type="button" data-auth-tab="signup">${this.t("Create Account", "खाता बनाएँ")}</button>
@@ -2810,7 +2960,7 @@ const App = {
         <div class="field" style="margin:0">
           <label>${this.t("Current School Class (Grade 6 to 12)", "वर्तमान कक्षा (कक्षा 6 से 12)")} <span style="color:var(--vermilion)">*</span></label>
           <select id="auth-su-grade" style="font-weight:700">
-            <optgroup label="${this.t("Group I · Foundation Stage (Interest Discovery)", "ग्रुप I · फाउंडेशन स्टेज (रुचि खोज)")}">
+            <optgroup label="${this.t("Group I · Discovery Stage (Interest Discovery)", "ग्रुप I · डिस्कवरी स्टेज (रुचि खोज)")}">
               <option value="6">${this.t("Class 6th", "कक्षा 6वीं")}</option>
               <option value="7">${this.t("Class 7th", "कक्षा 7वीं")}</option>
               <option value="8">${this.t("Class 8th", "कक्षा 8वीं")}</option>
@@ -3075,9 +3225,6 @@ const App = {
   viewWelcome() {
     const isHi = this.state.lang === "hi";
     const selectedCat = this.state.landingCategory || "all";
-    const comparePresets = this.landingComparePresets();
-    const activePresetKey = this.state.landingComparePreset && comparePresets[this.state.landingComparePreset] ? this.state.landingComparePreset : "tech";
-    const activePreset = comparePresets[activePresetKey];
 
     // Filter preview careers
     const allCareers = DISHA_DATA.careers || [];
@@ -3104,58 +3251,57 @@ const App = {
             <div class="hero-grid-2col">
               <div class="hero-content">
                 <div class="hero-pill-badge">
-                  <span>🚀</span>
-                  <span>${this.t("India's Most Accurate Career Discovery Platform", "भारत का सबसे सटीक करियर खोज मंच")}</span>
+                  <span>🏛️</span>
+                  <span>${this.t("Career Development & Guidance Cell · 3-Stage Assessment Framework", "करियर विकास एवं मार्गदर्शन प्रकोष्ठ · 3-स्तरीय मूल्यांकन ढाँचा")}</span>
                 </div>
 
                 <h1>
-                  ${this.t("Find your", "अपनी")} <em>${this.t("true direction", "सही दिशा")}</em> ${this.t("before choosing your stream.", "और स्ट्रीम का चुनाव करें।")}
+                  ${this.t("Developmentally Appropriate", "कक्षा और आयु के अनुरूप")} <em>${this.t("Career Guidance", "वैज्ञानिक करियर मार्गदर्शन")}</em> ${this.t("for Every Student Stage.", "हर विद्यार्थी के लिए।")}
                 </h1>
 
                 <p class="hero-lead">
                   ${this.t(
-                    "Stop guessing between Science, Commerce, and Arts. Discover your unique strengths with RIASEC psychometrics, a 4-domain aptitude check, and clear Indian educational roadmaps.",
-                    "साइंस, कॉमर्स और आर्ट्स के बीच असमंजस छोड़ें। RIASEC साइकोमेट्रिक और 4 तर्क क्षेत्रों के साथ अपनी सही क्षमता और करियर रोडमैप जानें।"
+                    "Structured psychological assessments across school classes: Interest exploration in Classes 6–8, Stream & Aptitude mapping in Classes 9–10, and Comprehensive Personality profiling in Classes 11–12.",
+                    "कक्षा 6 से 12 के लिए चरणबद्ध मनोवैज्ञानिक मूल्यांकन: कक्षा 6–8 में रुचि खोज, 9–10 में स्ट्रीम व अभिक्षमता (NCERT TAMANNA), और 11–12 में व्यक्तित्व परीक्षण (Big Five OCEAN)।"
                   )}
                 </p>
 
                 <div class="hero-btn-group">
                   <button class="btn btn-primary" type="button" data-start="1">
-                    <span>${this.t("Start Free Discovery Test", "मुफ़्त टेस्ट शुरू करें")}</span>
+                    <span>${this.t("Start Student Discovery", "विद्यार्थी टेस्ट शुरू करें")}</span>
                     <span class="arr">→</span>
                   </button>
-                  <button class="btn btn-secondary" type="button" data-demo="1">
-                    <span>⚡ ${this.t("Try Interactive Demo", "डेमो आज़माएँ")}</span>
+                  <button class="btn btn-secondary" type="button" data-open-demo-switcher="1" style="border:1.5px solid var(--marigold);font-weight:800;">
+                    <span>⚡ ${this.t("Instant Demo Switcher", "त्वरित 1-क्लिक डेमो")}</span>
                   </button>
-                  <button class="btn btn-ink" type="button" data-auth-open="signup">
-                    <span>${this.t("Create Account", "खाता बनाएँ")}</span>
+                  <button class="btn btn-ink" type="button" data-demo-admin="1">
+                    <span>⚡ ${this.t("Admin Analytics", "एडमिन पोर्टल")}</span>
                   </button>
                 </div>
 
                 <div class="hero-trust-strip">
-                  <div class="trust-item"><span class="ti-dot"></span><span>50,000+ ${this.t("Students Guided", "विद्यार्थी")}</span></div>
-                  <div class="trust-item"><span class="ti-dot"></span><span>100+ ${this.t("Career Roadmaps", "करियर रोडमैप")}</span></div>
-                  <div class="trust-item"><span class="ti-dot"></span><span>100% ${this.t("Free & Explainable", "मुफ़्त व स्पष्ट")}</span></div>
-                  <div class="trust-item"><span class="ti-dot"></span><span>${this.t("Hindi + English", "हिंदी + अंग्रेज़ी")}</span></div>
+                  <div class="trust-item"><span class="ti-dot"></span><span>${this.t("Group I: Classes 6–8 (Discovery)", "ग्रुप I: कक्षा 6–8 (डिस्कवरी)")}</span></div>
+                  <div class="trust-item"><span class="ti-dot"></span><span>${this.t("Group II: Classes 9–10 (Stream Choice)", "ग्रुप II: कक्षा 9–10 (स्ट्रीम चयन)")}</span></div>
+                  <div class="trust-item"><span class="ti-dot"></span><span>${this.t("Group III: Classes 11–12 (Career & College)", "ग्रुप III: कक्षा 11–12 (करियर व कॉलेज)")}</span></div>
                 </div>
               </div>
 
               <div class="hero-showcase">
-                <div class="hero-visual-card">
+                <div class="hero-visual-card" style="padding:28px 24px;">
                   <!-- Floating widgets -->
                   <div class="hero-floating-pill top-left">
-                    <span>⭐</span>
-                    <div><strong>96% ${this.t("Fit", "मिलान")}</strong> · <span>Robotics Dev</span></div>
+                    <span>🌱</span>
+                    <div><strong>Group I</strong> · <span>Interest (RIASEC)</span></div>
                   </div>
 
                   <div class="hero-floating-pill bottom-right">
                     <span>🧭</span>
-                    <div><strong>RIASEC</strong> · <span>Investigative + Realistic</span></div>
+                    <div><strong>Group II</strong> · <span>Interest + TAMANNA</span></div>
                   </div>
 
                   <div class="hero-floating-pill bottom-left">
-                    <span>🧠</span>
-                    <div><strong>Aptitude</strong> · <span>Logical Reasoning 92%</span></div>
+                    <span>🎓</span>
+                    <div><strong>Group III</strong> · <span>Big 5 Personality</span></div>
                   </div>
 
                   <div class="hero-compass-box" aria-hidden="true">
@@ -3167,9 +3313,11 @@ const App = {
                     <span class="sticker s5">🎨</span>
                   </div>
 
-                  <div class="tiny" style="margin-top:8px">${this.t("Phase 1 Discovery Engine", "चरण 1 खोज इंजन")}</div>
+                  <div class="tiny" style="margin-top:10px;font-weight:800;color:var(--ink);letter-spacing:0.04em">
+                    ${this.t("CDGC Career Guidance Engine", "सीडीजीसी करियर मार्गदर्शन इंजन")}
+                  </div>
                   <p style="font-family:var(--hand);font-size:1.05rem;color:var(--ink-soft);margin-top:4px">
-                    "${this.t("Every big journey starts with self-discovery.", "हर बड़ी यात्रा आत्म-खोज से शुरू होती है।")}"
+                    "${this.t("Empowering students to choose with scientific clarity.", "विद्यार्थियों को वैज्ञानिक स्पष्टता के साथ सही दिशा देना।")}"
                   </p>
                 </div>
               </div>
@@ -3177,48 +3325,110 @@ const App = {
           </div>
         </section>
 
-        <!-- RIASEC 6-PILLARS SECTION -->
+        <!-- 3-STAGE ASSESSMENT FRAMEWORK SECTION -->
         <section class="landing-section alt-bg" id="features">
           <div class="landing-container">
             <div class="section-head">
-              <p class="eyebrow"><span class="stamp">${this.t("Scientific Framework", "वैज्ञानिक ढाँचा")}</span></p>
-              <h2>${this.t("The 6 RIASEC Interest Dimensions", "6 RIASEC रुचि स्तंभ")}</h2>
+              <p class="eyebrow"><span class="stamp">${this.t("National Guidance Framework", "राष्ट्रीय मार्गदर्शन ढाँचा")}</span></p>
+              <h2>${this.t("Progressive 3-Group Assessment Framework", "3-स्तरीय प्रगतिशील मूल्यांकन ढाँचा")}</h2>
               <p>${this.t(
-                "Based on Dr. John Holland's world-renowned psychometric model, customized for Indian schools and career paths.",
-                "डॉ. जॉन हॉलैंड के वैश्विक साइकोमेट्रिक मॉडल पर आधारित, भारतीय शिक्षा और करियर विकल्पों के अनुरूप।"
+                "Tailored according to the developmental stage of school students (Classes 6 to 12) per NEP 2020 guidelines.",
+                "NEP 2020 एवं NCERT के दिशानिर्देशों के अनुसार स्कूली विद्यार्थियों के विकासात्मक स्तर के अनुरूप तैयार।"
               )}</p>
             </div>
 
-            <div class="riasec-matrix-grid">
-              ${Object.entries(DISHA_DATA.riasecMeta)
-                .map(([code, meta]) => {
-                  const colors = {
-                    R: { bg: "#cfe6de", border: "#1f6f66", text: "#1f6f66" },
-                    I: { bg: "#d7e0f2", border: "#34508a", text: "#34508a" },
-                    A: { bg: "#f8e3ae", border: "#eaa42a", text: "#9c3018" },
-                    S: { bg: "#ffdcd4", border: "#c9432a", text: "#c9432a" },
-                    E: { bg: "#fcecd2", border: "#eaa42a", text: "#1d2733" },
-                    C: { bg: "#e6e0d2", border: "#3a4859", text: "#3a4859" },
-                  }[code] || { bg: "#fff", border: "#1d2733", text: "#1d2733" };
+            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(min(100%, 280px), 1fr));gap:20px;margin-top:24px;">
+              
+              <!-- GROUP I CARD -->
+              <div class="card" style="border:2px solid var(--marigold);border-radius:18px;padding:26px;display:flex;flex-direction:column;justify-content:space-between;background:var(--paper-1);box-shadow:0 6px 18px rgba(0,0,0,0.04);">
+                <div>
+                  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+                    <span style="font-size:1.8rem">🌱</span>
+                    <span class="rich-badge" style="background:rgba(224,159,62,0.16);border-color:var(--marigold);font-weight:800;font-size:0.82rem;color:var(--ink);">
+                      Group I · Classes 6–8
+                    </span>
+                  </div>
+                  <h3 style="font-size:1.3rem;margin:0 0 6px;color:var(--ink)">${this.t("Discovery Stage", "डिस्कवरी स्टेज")}</h3>
+                  <div style="font-size:0.86rem;font-weight:700;color:var(--vermilion);margin-bottom:12px;">
+                    ${this.t("Assessment: Interest Inventory (RIASEC)", "मूल्यांकन: रुचि इन्वेंटरी (RIASEC)")}
+                  </div>
+                  <p style="font-size:0.88rem;line-height:1.55;color:var(--ink-soft);margin-bottom:16px;">
+                    ${this.t(
+                      "Identifies natural inclinations across 6 broad interest types without pushing students toward premature career decisions. Guides subject choices and exploratory hobbies.",
+                      "बिना किसी जल्दबाजी के 6 व्यापक रुचि प्रकारों की पहचान कर विषय चयन और पाठ्येतर गतिविधियों को सही दिशा देता है।"
+                    )}
+                  </p>
+                  <div style="background:var(--paper-2);padding:10px 14px;border-radius:10px;font-size:0.8rem;border:1px solid var(--edge);">
+                    📊 <strong>${this.t("Report:", "रिपोर्ट:")}</strong> Level 1 - Interest Inventory Report
+                  </div>
+                </div>
+                <div style="margin-top:20px;">
+                  <button type="button" class="btn btn-secondary" data-demo-group1="1" style="width:100%;font-size:0.84rem;border-color:var(--marigold);">
+                    ⚡ ${this.t("Demo Group I (Class 7 View)", "डेमो ग्रुप I (कक्षा 7वीं दृश्य)")}
+                  </button>
+                </div>
+              </div>
 
-                  return `
-                  <div class="riasec-pillar-card">
-                    <div class="pillar-top">
-                      <div class="pillar-badge-circle" style="background:${colors.bg};border-color:${colors.border}">
-                        <span>${meta.icon}</span>
-                      </div>
-                      <span class="pillar-letter-tag" style="background:${colors.bg};color:${colors.text};border-color:${colors.border}">
-                        ${code}
-                      </span>
-                    </div>
-                    <h3>${isHi ? meta.hi : meta.name}</h3>
-                    <p>${isHi ? meta.hiDesc : meta.desc}</p>
-                    <div class="pillar-careers-list">
-                      <span class="pillar-career-pill">${code === "R" ? "Engineering / Solar" : code === "I" ? "Software / Analytics" : code === "A" ? "UI Design / Media" : code === "S" ? "Teaching / Nursing" : code === "E" ? "Business / Law" : "Finance / Banking"}</span>
-                    </div>
-                  </div>`;
-                })
-                .join("")}
+              <!-- GROUP II CARD -->
+              <div class="card" style="border:2px solid var(--teal);border-radius:18px;padding:26px;display:flex;flex-direction:column;justify-content:space-between;background:var(--paper-1);box-shadow:0 6px 18px rgba(0,0,0,0.04);">
+                <div>
+                  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+                    <span style="font-size:1.8rem">🧭</span>
+                    <span class="rich-badge" style="background:rgba(45,212,191,0.16);border-color:var(--teal);font-weight:800;font-size:0.82rem;color:var(--ink);">
+                      Group II · Classes 9–10
+                    </span>
+                  </div>
+                  <h3 style="font-size:1.3rem;margin:0 0 6px;color:var(--ink)">${this.t("Exploration Stage", "एक्सप्लोरेशन स्टेज")}</h3>
+                  <div style="font-size:0.86rem;font-weight:700;color:var(--counselor-teal);margin-bottom:12px;">
+                    ${this.t("Assessments: RIASEC + NCERT TAMANNA Aptitude", "मूल्यांकन: रुचि + NCERT तमन्ना अभिक्षमता")}
+                  </div>
+                  <p style="font-size:0.88rem;line-height:1.55;color:var(--ink-soft);margin-bottom:16px;">
+                    ${this.t(
+                      "Measures actual cognitive strengths (verbal, numerical, logical, spatial, mechanical) alongside interests. Essential for choosing the right 11th stream (Science, Commerce, Arts).",
+                      "रुचि के साथ-साथ वास्तविक संज्ञानात्मक क्षमताओं (मौखिक, संख्यात्मक, तार्किक व स्थानिक) को मापकर सही 11वीं स्ट्रीम का वैज्ञानिक चयन कराता है।"
+                    )}
+                  </p>
+                  <div style="background:var(--paper-2);padding:10px 14px;border-radius:10px;font-size:0.8rem;border:1px solid var(--edge);">
+                    📊 <strong>${this.t("Report:", "रिपोर्ट:")}</strong> Level 1 (Interest) + Level 2 (Aptitude & Stream) Report
+                  </div>
+                </div>
+                <div style="margin-top:20px;">
+                  <button type="button" class="btn btn-secondary" data-demo-group2="1" style="width:100%;font-size:0.84rem;border-color:var(--teal);">
+                    ⚡ ${this.t("Demo Group II (Class 10 View)", "डेमो ग्रुप II (कक्षा 10वीं दृश्य)")}
+                  </button>
+                </div>
+              </div>
+
+              <!-- GROUP III CARD -->
+              <div class="card" style="border:2px solid var(--azure, #38bdf8);border-radius:18px;padding:26px;display:flex;flex-direction:column;justify-content:space-between;background:var(--paper-1);box-shadow:0 6px 18px rgba(0,0,0,0.04);">
+                <div>
+                  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+                    <span style="font-size:1.8rem">🎓</span>
+                    <span class="rich-badge" style="background:rgba(56,189,248,0.16);border-color:#38bdf8;font-weight:800;font-size:0.82rem;color:var(--ink);">
+                      Group III · Classes 11–12
+                    </span>
+                  </div>
+                  <h3 style="font-size:1.3rem;margin:0 0 6px;color:var(--ink)">${this.t("Decision Stage", "डिसीजन स्टेज")}</h3>
+                  <div style="font-size:0.86rem;font-weight:700;color:#2563eb;margin-bottom:12px;">
+                    ${this.t("Assessments: RIASEC + TAMANNA + Big Five (OCEAN)", "मूल्यांकन: रुचि + तमन्ना + बिग फाइव (OCEAN)")}
+                  </div>
+                  <p style="font-size:0.88rem;line-height:1.55;color:var(--ink-soft);margin-bottom:16px;">
+                    ${this.t(
+                      "Comprehensive three-pronged evaluation (interests + cognitive aptitude + personality dynamics) to guide college degrees, entrance exams, and 900+ career pathways.",
+                      "रुचि, संज्ञानात्मक क्षमता और व्यक्तित्व का त्रिकोणीय समग्र मूल्यांकन जो कॉलेज डिग्री, प्रतियोगी प्रवेश परीक्षा और 900+ करियर विकल्पों में मार्गदर्शन करता है।"
+                    )}
+                  </p>
+                  <div style="background:var(--paper-2);padding:10px 14px;border-radius:10px;font-size:0.8rem;border:1px solid var(--edge);">
+                    📊 <strong>${this.t("Report:", "रिपोर्ट:")}</strong> Level 1 (Interest) + Level 2 (Aptitude) + Level 3 (Personality)
+                  </div>
+                </div>
+                <div style="margin-top:20px;">
+                  <button type="button" class="btn btn-secondary" data-demo-group3="1" style="width:100%;font-size:0.84rem;border-color:#38bdf8;">
+                    ⚡ ${this.t("Demo Group III (Class 12 View)", "डेमो ग्रुप III (कक्षा 12वीं दृश्य)")}
+                  </button>
+                </div>
+              </div>
+
             </div>
           </div>
         </section>
@@ -3256,7 +3466,7 @@ const App = {
 
               <div class="roadmap-card" style="border-color:var(--vermilion);box-shadow:0 6px 0 var(--ink)">
                 <div class="roadmap-step-badge" style="background:var(--vermilion);color:#fff">★</div>
-                <h3>${this.t("Explainable Matches", "सटीक करियर रिपोर्ट")}</h3>
+                <h3>${this.t("Career Recommendations", "करियर सुझाव व सिफारिशें")}</h3>
                 <p>${this.t("Get customized matches, stream recommendations (PCB/PCM/Commerce/Arts), college exams & roadmaps.", "करियर मिलान, 10वीं/12वीं के बाद सही स्ट्रीम, प्रवेश परीक्षा और कॉलेज रोडमैप पाएँ।")}</p>
                 <div class="roadmap-duration" style="color:var(--teal)">🎉 ${this.t("Instant Result", "तुरंत परिणाम")}</div>
               </div>
@@ -3265,192 +3475,6 @@ const App = {
             <div style="text-align:center;margin-top:34px">
               <button class="btn btn-primary" type="button" data-start="1" style="max-width:320px;margin:0 auto">
                 ${this.t("Begin Your Discovery Now", "अभी अपनी खोज शुरू करें")} →
-              </button>
-            </div>
-          </div>
-        </section>
-
-        <!-- SIDE-BY-SIDE CAREER COMPARISON SHOWCASE (ADD-ON FEATURE) -->
-        <section class="landing-section compare-showcase-section" id="compare-feature">
-          <div class="landing-container">
-            <div class="section-head">
-              <p class="eyebrow"><span class="stamp">⚖️ ${this.t("Add-On Power Tool", "स्मार्ट तुलना इंजन")}</span></p>
-              <h2>${this.t("Can't Decide? Compare Careers Side-by-Side", "करियर चयन में उलझन? एक साथ करें आमने-सामने तुलना")}</h2>
-              <p>${this.t("Pit up to 6 careers head-to-head on salary trajectories, college entrance exams, required stream subjects, course fees, work environments, and your psychometric fit score before locking your final goal.", "सैलरी, प्रवेश परीक्षा, 10वीं/12वीं स्ट्रीम, कॉलेज फीस, काम का माहौल और अपने साइकोमेट्रिक स्कोर की आमने-सामने तुलना करके सही करियर चुनें।")}</p>
-            </div>
-
-            <!-- Live Matchup Preset Selector -->
-            <div class="compare-preset-selector">
-              <span class="preset-label">⚡ ${this.t("Try Live Matchups:", "लाइव तुलना देखें:")}</span>
-              <div class="preset-chips-wrap">
-                ${Object.entries(comparePresets).map(([key, p]) => `
-                  <button type="button" class="compare-preset-pill ${activePresetKey === key ? "active" : ""}" data-compare-preset="${key}">
-                    ${p.label}
-                  </button>
-                `).join("")}
-              </div>
-            </div>
-
-            <!-- Interactive Comparison Matrix Card -->
-            <div class="compare-matrix-preview-card">
-              <div class="cmp-card-header">
-                <div class="cmp-vs-badge">
-                  <span>${activePreset.c1.icon} ${activePreset.c1.title}</span>
-                  <span class="vs-circle">VS</span>
-                  <span>${activePreset.c2.icon} ${activePreset.c2.title}</span>
-                </div>
-                <div class="cmp-hint-tag">
-                  🎯 ${this.t("Interactive Multi-Career Matrix", "इंटरएक्टिव बहु-करियर मैट्रिक्स")}
-                </div>
-              </div>
-
-              <!-- Side-by-Side Dual Column Grid -->
-              <div class="cmp-dual-grid">
-                <!-- Column 1: Career A -->
-                <div class="cmp-career-col primary">
-                  <div class="cmp-head">
-                    <div class="cmp-ico">${activePreset.c1.icon}</div>
-                    <div class="cmp-title-box">
-                      <div class="cmp-sector">${activePreset.c1.sector}</div>
-                      <h3>${activePreset.c1.title}</h3>
-                    </div>
-                    <div class="cmp-fit-badge">
-                      <strong>${activePreset.c1.fit}%</strong> <span>${this.t("Match", "फिट")}</span>
-                    </div>
-                  </div>
-
-                  <div class="cmp-params-list">
-                    <div class="cmp-param-item">
-                      <div class="param-lbl">💰 ${this.t("Salary Potential", "वेतन पैकेज")}</div>
-                      <div class="param-val highlight-val">${activePreset.c1.salary}</div>
-                    </div>
-                    <div class="cmp-param-item">
-                      <div class="param-lbl">🎓 ${this.t("Stream & Subject", "11वीं-12वीं स्ट्रीम")}</div>
-                      <div class="param-val">${activePreset.c1.stream}</div>
-                    </div>
-                    <div class="cmp-param-item">
-                      <div class="param-lbl">📝 ${this.t("Top Entrance Exams", "प्रवेश परीक्षाएँ")}</div>
-                      <div class="param-val">
-                        <div class="cmp-exam-chips">
-                          ${activePreset.c1.exams.map((ex) => `<span class="exam-pill">${ex}</span>`).join("")}
-                        </div>
-                      </div>
-                    </div>
-                    <div class="cmp-param-item">
-                      <div class="param-lbl">⏳ ${this.t("Degree & Duration", "डिग्री व अवधि")}</div>
-                      <div class="param-val">${activePreset.c1.duration}</div>
-                    </div>
-                    <div class="cmp-param-item">
-                      <div class="param-lbl">🧭 ${this.t("RIASEC Profile", "हॉलैंड पर्सनालिटी")}</div>
-                      <div class="param-val">${activePreset.c1.riasec}</div>
-                    </div>
-                    <div class="cmp-param-item">
-                      <div class="param-lbl">🏢 ${this.t("Work Environment", "कार्य वातावरण")}</div>
-                      <div class="param-val">${activePreset.c1.environment}</div>
-                    </div>
-                    <div class="cmp-param-item">
-                      <div class="param-lbl">📈 ${this.t("Growth Ladder", "करियर ग्रोथ सीढ़ी")}</div>
-                      <div class="param-val growth-val">${activePreset.c1.growth}</div>
-                    </div>
-                  </div>
-
-                  <div class="cmp-action-box">
-                    <button type="button" class="btn btn-sm btn-primary btn-block" data-finalize-career="${activePreset.c1.id}">
-                      🎯 ${this.t("Finalize as My Goal", "इसे लक्ष्य चुनें")}
-                    </button>
-                  </div>
-                </div>
-
-                <!-- Column 2: Career B -->
-                <div class="cmp-career-col secondary">
-                  <div class="cmp-head">
-                    <div class="cmp-ico">${activePreset.c2.icon}</div>
-                    <div class="cmp-title-box">
-                      <div class="cmp-sector">${activePreset.c2.sector}</div>
-                      <h3>${activePreset.c2.title}</h3>
-                    </div>
-                    <div class="cmp-fit-badge">
-                      <strong>${activePreset.c2.fit}%</strong> <span>${this.t("Match", "फिट")}</span>
-                    </div>
-                  </div>
-
-                  <div class="cmp-params-list">
-                    <div class="cmp-param-item">
-                      <div class="param-lbl">💰 ${this.t("Salary Potential", "वेतन पैकेज")}</div>
-                      <div class="param-val highlight-val">${activePreset.c2.salary}</div>
-                    </div>
-                    <div class="cmp-param-item">
-                      <div class="param-lbl">🎓 ${this.t("Stream & Subject", "11वीं-12वीं स्ट्रीम")}</div>
-                      <div class="param-val">${activePreset.c2.stream}</div>
-                    </div>
-                    <div class="cmp-param-item">
-                      <div class="param-lbl">📝 ${this.t("Top Entrance Exams", "प्रवेश परीक्षाएँ")}</div>
-                      <div class="param-val">
-                        <div class="cmp-exam-chips">
-                          ${activePreset.c2.exams.map((ex) => `<span class="exam-pill">${ex}</span>`).join("")}
-                        </div>
-                      </div>
-                    </div>
-                    <div class="cmp-param-item">
-                      <div class="param-lbl">⏳ ${this.t("Degree & Duration", "डिग्री व अवधि")}</div>
-                      <div class="param-val">${activePreset.c2.duration}</div>
-                    </div>
-                    <div class="cmp-param-item">
-                      <div class="param-lbl">🧭 ${this.t("RIASEC Profile", "हॉलैंड पर्सनालिटी")}</div>
-                      <div class="param-val">${activePreset.c2.riasec}</div>
-                    </div>
-                    <div class="cmp-param-item">
-                      <div class="param-lbl">🏢 ${this.t("Work Environment", "कार्य वातावरण")}</div>
-                      <div class="param-val">${activePreset.c2.environment}</div>
-                    </div>
-                    <div class="cmp-param-item">
-                      <div class="param-lbl">📈 ${this.t("Growth Ladder", "करियर ग्रोथ सीढ़ी")}</div>
-                      <div class="param-val growth-val">${activePreset.c2.growth}</div>
-                    </div>
-                  </div>
-
-                  <div class="cmp-action-box">
-                    <button type="button" class="btn btn-sm btn-primary btn-block" data-finalize-career="${activePreset.c2.id}">
-                      🎯 ${this.t("Finalize as My Goal", "इसे लक्ष्य चुनें")}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- 4-Pillar Feature Advantage Grid -->
-            <div class="compare-features-grid">
-              <div class="cmp-feat-card">
-                <div class="feat-ico">⚖️</div>
-                <h4>${this.t("Up to 6 Careers at Once", "एक साथ 6 करियर की तुलना")}</h4>
-                <p>${this.t("Compare salaries, fees, scholarships, stream eligibility, and growth ladders across 6 careers simultaneously.", "वेतन, फीस, छात्रवृत्ति, स्ट्रीम योग्यता और पदोन्नति की विस्तृत बहु-करियर मैट्रिक्स।")}</p>
-              </div>
-
-              <div class="cmp-feat-card">
-                <div class="feat-ico">🎯</div>
-                <h4>${this.t("1-Click Goal Lock", "1-क्लिक में लक्ष्य फाइनल")}</h4>
-                <p>${this.t("Pick your winning career and instantly lock it to generate your personalized year-by-year milestone checklist.", "अपना पसंदीदा करियर चुनें और तुरंत व्यक्तिगत वर्ष-वार रोडमैप अनलॉक करें।")}</p>
-              </div>
-
-              <div class="cmp-feat-card">
-                <div class="feat-ico">🏛️</div>
-                <h4>${this.t("Govt vs Private Indian Data", "सरकारी व निजी कॉलेज डेटा")}</h4>
-                <p>${this.t("Accurate fee estimates, national (JEE/NEET/CUET/NDA) exams, and state quotas tailored for Indian students.", "आईआईटी, एनआईटी, एम्स और राज्य विश्वविद्यालयों की सटीक फीस व प्रवेश विवरण।")}</p>
-              </div>
-
-              <div class="cmp-feat-card">
-                <div class="feat-ico">📱</div>
-                <h4>${this.t("Mobile-First Touch Matrix", "मोबाइल-फ्रेंडली डिज़ाइन")}</h4>
-                <p>${this.t("Smooth horizontal swiping, high-contrast parameter cards, and instant comparison on any smartphone.", "स्मार्टफोन पर आसान स्क्रॉलिंग और तेज तुलना के लिए विशेष रूप से अनुकूलित।")}</p>
-              </div>
-            </div>
-
-            <div class="compare-cta-block">
-              <button class="btn btn-primary" type="button" data-launch-compare="${activePresetKey}">
-                ⚖️ ${this.t("Launch Side-by-Side Comparison Tool", "करियर तुलना टूल शुरू करें")} →
-              </button>
-              <button class="btn btn-secondary" type="button" data-go="explore">
-                🔍 ${this.t("Search 928+ Careers in Directory", "928+ करियर डायरेक्टरी देखें")}
               </button>
             </div>
           </div>
@@ -3512,7 +3536,7 @@ const App = {
             </div>
 
             <div style="text-align:center;margin-top:32px">
-              <button class="btn btn-secondary" type="button" data-go="explore" style="max-width:320px;margin:0 auto">
+              <button class="btn btn-secondary" type="button" data-browse-careers="1" style="max-width:320px;margin:0 auto">
                 ${this.t("Browse Full Career Directory (Search & Filters)", "पूरी करियर डायरेक्टरी देखें")} →
               </button>
             </div>
@@ -3544,67 +3568,9 @@ const App = {
                 <ul class="why-points-list">
                   <li class="why-point-item"><span class="icon">✨</span><span><strong>15-${this.t("Minute Intuitive Assessment", "मिनट का रोचक टेस्ट")}</strong> — ${this.t("designed for high school attention spans.", "बिना किसी तनाव के।")}</span></li>
                   <li class="why-point-item"><span class="icon">✨</span><span><strong>100% ${this.t("Free & Private", "मुफ़्त और सुरक्षित")}</strong> — ${this.t("no spam calls, no commercial bias.", "कोई स्पैम कॉल या फीस नहीं।")}</span></li>
-                  <li class="why-point-item"><span class="icon">✨</span><span><strong>${this.t("Explainable Matches", "स्पष्ट मिलान कारण")}</strong> — ${this.t("know exactly why a career fits your RIASEC & aptitude.", "जानें कोई करियर आपके लिए क्यों सही है।")}</span></li>
+                  <li class="why-point-item"><span class="icon">✨</span><span><strong>${this.t("Career Recommendations", "करियर सुझाव")}</strong> — ${this.t("know exactly why a career fits your profile & aptitude.", "सटीक रूप से जानें कौन सा करियर आपकी क्षमताओं के अनुकूल है।")}</span></li>
                   <li class="why-point-item"><span class="icon">✨</span><span><strong>${this.t("Bilingual & Indian Context", "द्विभाषी और भारतीय संदर्भ")}</strong> — ${this.t("Hindi + English, ITI, Polytechnic, CUET, JEE, NEET & State Paths.", "हिंदी + अंग्रेज़ी, बोर्ड और प्रतियोगी परीक्षाओं का पूरा विवरण।")}</span></li>
                 </ul>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- TESTIMONIALS -->
-        <section class="landing-section alt-bg" id="testimonials">
-          <div class="landing-container">
-            <div class="section-head">
-              <p class="eyebrow"><span class="stamp">${this.t("Student Stories", "विद्यार्थियों के अनुभव")}</span></p>
-              <h2>${this.t("Loved by Students & Parents", "विद्यार्थियों और अभिभावकों का भरोसा")}</h2>
-              <p>${this.t("Here is what students across India say about their discovery experience.", "जानें विद्यार्थियों ने कैसे पाई अपनी सही करियर दिशा।")}</p>
-            </div>
-
-            <div class="testimonials-grid">
-              <div class="testimonial-card">
-                <div class="t-stars">★★★★★</div>
-                <p>"${this.t(
-                  "I was completely torn between PCM and PCB after Class 10. CareerMarg's aptitude check showed my spatial strength and led me to Robotics & Automation!",
-                  "10वीं के बाद PCM और PCB में उलझन थी। CareerMarg के टेस्ट ने मेरी ताकत पहचानकर मुझे सही दिशा दिखाई!"
-                )}"</p>
-                <div class="t-author">
-                  <div class="avatar" style="background:#cfe6de">RK</div>
-                  <div>
-                    <strong>Rahul Kumar</strong>
-                    <small>${this.t("Class 10 Student · Delhi", "कक्षा 10वीं का छात्र · दिल्ली")}</small>
-                  </div>
-                </div>
-              </div>
-
-              <div class="testimonial-card">
-                <div class="t-stars">★★★★★</div>
-                <p>"${this.t(
-                  "The Hindi language option helped my parents understand the career roadmap and entrance exam timeline clearly. The explainable fit score is awesome.",
-                  "हिंदी विकल्प से मेरे माता-पिता को भी करियर का पूरा रोडमैप और परीक्षा की तैयारी समझ आ गई।"
-                )}"</p>
-                <div class="t-author">
-                  <div class="avatar" style="background:#f8e3ae">PS</div>
-                  <div>
-                    <strong>Priya Sharma</strong>
-                    <small>${this.t("Class 12 Student · Jaipur", "कक्षा 12वीं की छात्रा · जयपुर")}</small>
-                  </div>
-                </div>
-              </div>
-
-              <div class="testimonial-card">
-                <div class="t-stars">★★★★★</div>
-                <p>"${this.t(
-                  "Unlike other sites asking for Rs 2000, this was genuinely 100% free and gave me side-by-side career comparisons with salary and qualification steps.",
-                  "बिना किसी शुल्क के इतना बेहतरीन और विस्तृत करियर तुलना टूल मिलना बहुत मददगार रहा।"
-                )}"</p>
-                <div class="t-author">
-                  <div class="avatar" style="background:#ffdcd4">AV</div>
-                  <div>
-                    <strong>Aman Verma</strong>
-                    <small>${this.t("Class 11 Commerce · Patna", "कक्षा 11वीं · पटना")}</small>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
@@ -4082,18 +4048,13 @@ const App = {
     const REQ_PCT = 70; // 70% threshold required on previous step to unlock next step
 
     // Group-wise Discovery Path Steps based on Career Assessment Framework
-    const ft = window.DISHA_DATA?.frameworkTiers || {};
-    const ft1 = ft.tier1_riasec || {};
-    const ft2 = ft.tier2_tamanna || {};
-    const ft3 = ft.tier3_ocean || {};
-
     const steps = [
       {
         id: "step_profile",
         route: "onboarding",
         no: "1",
         title: isHi ? "1. विद्यार्थी प्रोफ़ाइल एवं आकांक्षाएं" : "1. Student Profile & Aspirations",
-        desc: isHi ? "शैक्षणिक विवरण, कक्षा, विद्यालय एवं करियर आकांक्षाएं" : "Academic details, grade, institution, and career aspirations",
+        desc: isHi ? "शैक्षणिक विवरण, कक्षा, विद्यालय एवं प्राथमिक करियर प्राथमिकताएं" : "Academic details, grade, institution, and career aspirations",
         done: pPct === 100,
         pct: pPct,
         locked: false,
@@ -4103,12 +4064,12 @@ const App = {
         id: "step_tier1",
         route: "test/tier1_riasec",
         no: "2",
-        title: isHi ? `2. ${ft1.titleHi || "रुचि इन्वेंटरी (RIASEC)"}` : `2. ${ft1.title || "Interest Inventory (RIASEC)"}`,
-        desc: isHi ? (ft1.descHi || "छह व्यापक रुचि प्रकारों की पहचान एवं करियर क्लस्टर मैपिंग") : (ft1.desc || "Identifies natural inclinations across 6 broad interest types and maps to career clusters"),
+        title: isHi ? "2. रुचि खोज (RIASEC)" : "2. Find Your Interests (RIASEC)",
+        desc: isHi ? "6 व्यापक रुचि प्रकारों की पहचान एवं प्राथमिक करियर क्लस्टर मैपिंग" : "Identifies your natural inclinations across 6 interest types to match career paths",
         done: t1.done,
         pct: pPct < REQ_PCT ? 0 : t1.pct,
         locked: pPct < REQ_PCT,
-        lockMsg: isHi ? `🔒 अनलॉक करने के लिए पहले स्टेप 1 (विद्यार्थी प्रोफ़ाइल कम से कम ${REQ_PCT}%) पूरा करें!` : `🔒 Complete at least ${REQ_PCT}% of Step 1 (Student Profile) to unlock!`,
+        lockMsg: isHi ? `🔒 अनलॉक करने के लिए पहले प्रोफ़ाइल (कम से कम ${REQ_PCT}%) पूरी करें!` : `🔒 Complete at least ${REQ_PCT}% of Student Profile to unlock!`,
       }
     ];
 
@@ -4119,12 +4080,12 @@ const App = {
         id: "step_tier2",
         route: "test/tier2_tamanna",
         no: String(steps.length + 1),
-        title: isHi ? `${steps.length + 1}. ${ft2.titleHi || "अभिक्षमता परीक्षण [NCERT TAMANNA]"}` : `${steps.length + 1}. ${ft2.title || "Aptitude Test [NCERT TAMANNA]"}`,
-        desc: isHi ? (ft2.descHi || "वास्तविक संज्ञानात्मक क्षमताओं का मापन") : (ft2.desc || "Measures actual cognitive strengths essential for stream and career selection"),
+        title: isHi ? `${steps.length + 1}. अभिक्षमता खोज [NCERT TAMANNA]` : `${steps.length + 1}. Discover Your Aptitudes (NCERT TAMANNA)`,
+        desc: isHi ? "कक्षा 10 के बाद सही स्ट्रीम चयन के लिए 7 संज्ञानात्मक क्षमताओं का मूल्यांकन" : "Evaluates 7 core cognitive abilities essential for stream and course selection",
         done: t2.done,
         pct: !prevDone ? 0 : t2.pct,
         locked: !prevDone,
-        lockMsg: isHi ? `🔒 अनलॉक करने के लिए पहले रुचि इन्वेंटरी (कम से कम ${REQ_PCT}%) पूरी करें!` : `🔒 Complete at least ${REQ_PCT}% of Interest Inventory to unlock!`,
+        lockMsg: isHi ? `🔒 अनलॉक करने के लिए पहले रुचि खोज (कम से कम ${REQ_PCT}%) पूरी करें!` : `🔒 Complete at least ${REQ_PCT}% of Find Your Interests to unlock!`,
       });
     }
 
@@ -4135,12 +4096,12 @@ const App = {
         id: "step_tier3",
         route: "test/tier3_ocean",
         no: String(steps.length + 1),
-        title: isHi ? `${steps.length + 1}. ${ft3.titleHi || "व्यक्तित्व परीक्षण [The Big Five (OCEAN)]"}` : `${steps.length + 1}. ${ft3.title || "Personality Test [The Big Five (OCEAN)]"}`,
-        desc: isHi ? (ft3.descHi || "प्रमुख व्यक्तित्व आयामों का समग्र मूल्यांकन") : (ft3.desc || "Evaluates core behavioral traits supporting well-rounded career and course selection"),
+        title: isHi ? `${steps.length + 1}. व्यक्तित्व समझ [Big Five OCEAN]` : `${steps.length + 1}. Understand Your Personality (Big Five OCEAN)`,
+        desc: isHi ? "कॉलेज डिग्री व कार्यशैली अनुकूलन हेतु प्रमुख व्यक्तित्व आयामों का मूल्यांकन" : "Evaluates core behavioral traits supporting higher education and professional tracks",
         done: t3.done,
         pct: !prevDone ? 0 : t3.pct,
         locked: !prevDone,
-        lockMsg: isHi ? `🔒 अनलॉक करने के लिए पहले अभिक्षमता परीक्षण (कम से कम ${REQ_PCT}%) पूरा करें!` : `🔒 Complete at least ${REQ_PCT}% of Aptitude Test to unlock!`,
+        lockMsg: isHi ? `🔒 अनलॉक करने के लिए पहले अभिक्षमता खोज (कम से कम ${REQ_PCT}%) पूरा करें!` : `🔒 Complete at least ${REQ_PCT}% of Discover Your Aptitudes to unlock!`,
       });
     }
 
@@ -4156,109 +4117,53 @@ const App = {
 
     return `
       ${this.topbar({ title: BRAND, lang: true, avatar: true })}
-      <div class="screen home-greeting">
-        <div class="home-grid">
-          <div>
-            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
-              <span class="tiny" style="font-weight:800;letter-spacing:0.06em;color:var(--vermilion)">${this.t("Stage", "चरण")}:</span>
-              <span class="rich-badge" style="background:${stageInfo.stageBg};border-color:${stageInfo.stageColor};font-size:0.78rem">
+      <div class="screen home-greeting" style="max-width:1100px;margin:0 auto;padding-bottom:50px;">
+        
+        <!-- Clean, Spacious Header with Cohort Badge -->
+        <div class="home-header-minimal" style="margin-bottom:24px;padding:22px 24px;background:var(--card);border:1.5px solid var(--edge);border-radius:18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;">
+          <div class="home-header-left" style="flex:1;min-width:200px;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap;">
+              <span class="rich-badge" style="background:${stageInfo.stageBg};border-color:${stageInfo.stageColor};font-size:0.84rem;font-weight:800;color:var(--ink);">
                 ${stageInfo.badgeIcon} ${stageInfo.groupNo} (${stageInfo.classesLabel}) · ${isHi ? stageInfo.stageHi : stageInfo.stage}
               </span>
+              <span style="font-size:0.84rem;color:var(--ink-soft);font-weight:600;">
+                🏫 ${this.escape(this.state.profile.school || "Kendriya Vidyalaya")}
+              </span>
             </div>
-            <h1 style="margin:2px 0 6px">${this.t("Namaste", "नमस्ते")}, <span class="scribble">${this.escape(name.split(" ")[0])}</span></h1>
-            <p class="muted" style="margin-top:0">${this.t(
-              "Let's build your discovery profile — tailored step-by-step for your grade.",
-              "आइए आपकी खोज प्रोफ़ाइल बनाएँ — आपकी कक्षा और स्तर के अनुसार एक-एक कदम।"
-            )}</p>
+            <h1 style="margin:4px 0 6px;font-size:1.8rem;letter-spacing:-0.02em;">
+              ${this.t("Namaste", "नमस्ते")}, <span style="color:var(--vermilion);">${this.escape(name.split(" ")[0])}</span>
+            </h1>
+            <p class="muted" style="margin:0;font-size:0.92rem;">
+              ${this.t(
+                "Welcome to your personalized career discovery roadmap. Follow the steps below at your own pace.",
+                "आपके व्यक्तिगत करियर मार्गदर्शन पोर्टल में स्वागत है। अपनी गति से नीचे दिए गए चरणों को पूरा करें।"
+              )}
+            </p>
+          </div>
 
-            <!-- INTERACTIVE EXPEDITION MOUNTAIN PROGRESS CARD -->
-            <div class="card interactive-expedition-card">
-              <div class="expedition-top-bar">
-                <div class="expedition-info">
-                  <div class="tiny" style="font-weight:800;letter-spacing:0.06em;color:var(--vermilion)">
-                    🏔️ ${this.t("EXPEDITION PROGRESS · MOUNTAIN TRAIL", "अभियान प्रगति · पर्वत शिखर मार्ग")}
-                  </div>
-                  <div style="display:flex;align-items:baseline;gap:8px;margin-top:2px">
-                    <strong class="big-pct">${overallPct}<small>%</small></strong>
-                    <span class="expedition-milestone-tag">
-                      ${this.t("Milestone", "पड़ाव")} ${steps.filter((s) => s.done || (s.id === "step_profile" && s.pct >= 70)).length} / ${steps.length} ${this.t("Cleared", "पार")}
-                    </span>
-                    <span class="expedition-milestone-tag" style="background:${stageInfo.stageBg};color:var(--ink);font-weight:700">
-                      ${isHi ? stageInfo.gradeDisplayHi : stageInfo.gradeDisplay}
-                    </span>
-                  </div>
-                </div>
-                
-                <div class="expedition-action">
-                  <button class="btn btn-primary btn-sm expedition-cta-btn" type="button" 
-                    data-step-route="${allQuestsDone ? "report" : currentStep.route}" 
-                    data-step-locked="${allQuestsDone ? "0" : (currentStep.locked ? "1" : "0")}" 
-                    data-step-lockmsg="${this.escape(allQuestsDone ? "" : (currentStep.lockMsg || ""))}">
-                    ${allQuestsDone ? this.t("📊 View Full Report", "📊 पूरी रिपोर्ट देखें") : (currentStep.pct > 0 ? this.t("⚡ Continue Quest", "⚡ जारी रखें") : this.t("▶ Start Quest", "▶ शुरू करें"))} →
-                  </button>
-                </div>
-              </div>
+          <div class="home-header-progress" style="text-align:right;min-width:140px;">
+            <div style="font-size:0.82rem;font-weight:700;color:var(--ink-soft);margin-bottom:4px;">
+              ${this.t("OVERALL PROGRESS", "समग्र प्रगति")}
+            </div>
+            <div style="font-size:2rem;font-weight:900;color:var(--teal);line-height:1;">
+              ${overallPct}<small style="font-size:1.1rem;">%</small>
+            </div>
+            <div style="font-size:0.78rem;color:var(--ink-soft);margin-top:4px;">
+              ${steps.filter(s => s.done).length} / ${steps.length} ${this.t("Steps Cleared", "चरण पूर्ण")}
+            </div>
+          </div>
+        </div>
 
-              <!-- Interactive Mountain Expedition SVG with Dynamic Stage Waypoints -->
-              <div class="summit-art-interactive" role="region" aria-label="${this.t("Interactive Mountain Trail Map", "इंटरैक्टिव पर्वत यात्रा मानचित्र")}">
-                ${Art.summit(overallPct, steps, isHi)}
-              </div>
-
-              <!-- Interactive Quick Waypoint Strip for Mobile & Touch -->
-              <div class="expedition-waypoint-strip">
-                ${steps.map((s, idx) => {
-                  const isDone = s.done || (s.id === "step_profile" && s.pct >= 70);
-                  const isCurrent = s.id === currentStep.id && !s.done && !s.locked;
-                  const isLocked = s.locked;
-                  const pctVal = isDone ? 100 : s.pct;
-
-                  let pillClass = "ready";
-                  if (isDone) pillClass = "done";
-                  else if (isLocked) pillClass = "locked";
-                  else if (isCurrent) pillClass = "current";
-
-                  const shortTitle = s.id === "step_profile" ? (isHi ? "1. प्रोफ़ाइल" : "1. Profile") :
-                                     s.id === "step_tier1" ? (isHi ? "2. रुचि" : "2. Interest") :
-                                     s.id === "step_tier2" ? (isHi ? "3. अभिक्षमता" : "3. Aptitude") :
-                                     (isHi ? "4. व्यक्तित्व" : "4. Personality");
-
-                  return `
-                    <button class="expedition-waypoint-pill ${pillClass}" type="button"
-                      data-step-route="${s.route}"
-                      data-step-locked="${s.locked ? "1" : "0"}"
-                      data-step-lockmsg="${this.escape(s.lockMsg || "")}"
-                      title="${this.escape(s.title)} (${pctVal}%)">
-                      <span class="wp-icon">${isDone ? "✓" : isLocked ? "🔒" : isCurrent ? "🧭" : (idx + 1)}</span>
-                      <span class="wp-name">${shortTitle}</span>
-                      <span class="wp-pct">${pctVal}%</span>
-                    </button>
-                  `;
-                }).join("")}
-              </div>
-
-              <!-- Live Expedition HUD Status Bar -->
-              <div class="expedition-hud-footer">
-                <div class="hud-item">
-                  <span class="hud-dot ${allQuestsDone ? "done" : "active"}"></span>
-                  <span class="hud-text">
-                    <strong>${this.t("Current Focus", "वर्तमान पड़ाव")}:</strong> 
-                    ${allQuestsDone ? (isHi ? "सभी मूल्यांकन पूर्ण! रिपोर्ट तैयार है।" : "All Stage Assessments Completed! Report Ready.") : `${currentStep.title.split(":")[0]} (${currentStep.pct}% ${this.t("done", "पूर्ण")})`}
-                  </span>
-                </div>
-                <div class="hud-hint">
-                  ${
-                    allQuestsDone 
-                      ? `🎉 ${this.t("Tap Report tab or Explore tab below to see your matched paths!", "अपनी रिपोर्ट देखने या करियर खोजने के लिए नीचे रिपोर्ट या एक्सप्लोर टैब पर टैप करें!")}`
-                      : currentStep.locked
-                      ? `🔒 ${currentStep.lockMsg}`
-                      : `💡 ${this.t("Tap any waypoint on the mountain to view that step!", "पर्वत पर किसी भी पड़ाव पर टैप करके उस चरण पर जाएँ!")}`
-                  }
-                </div>
-              </div>
+        <div class="home-grid home-discovery-grid">
+          
+          <!-- LEFT: CLEAN DISCOVERY STEPS -->
+          <div class="home-discovery-left">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+              <h2 style="font-size:1.2rem;margin:0;color:var(--ink);">${this.t("Your Discovery Steps", "आपके मूल्यांकन चरण")}</h2>
+              <span class="muted" style="font-size:0.82rem;">${stageInfo.groupNo} (${isHi ? stageInfo.gradeDisplayHi : stageInfo.gradeDisplay})</span>
             </div>
 
-            <div class="section-title">${this.t("Your Discovery Path", "आपका खोज पथ")}</div>
-            <div class="journey-grid">
+            <div class="journey-grid" style="display:flex;flex-direction:column;gap:14px;">
               ${steps
                 .map((s) => {
                   const isCurrent = s.id === currentStep.id && !s.done && !s.locked;
@@ -4269,109 +4174,132 @@ const App = {
                   else if (isCurrent) cls = "current";
                   else if (isInProgress) cls = "in-progress";
 
-                  let statusBadge = "";
-                  if (s.done) {
-                    statusBadge = `<span class="step-status-pill done">✓ 100% ${this.t("Done", "पूर्ण")}</span>`;
-                  } else if (s.locked) {
-                    statusBadge = `<span class="step-status-pill locked">🔒 0% · ${this.t("Locked", "लॉक")}</span>`;
-                  } else if (isInProgress) {
-                    statusBadge = `<span class="step-status-pill in-progress">⚡ ${s.pct}% ${this.t("In Progress", "जारी है")}</span>`;
-                  } else {
-                    statusBadge = `<span class="step-status-pill ready">0% · ${this.t("Ready", "शुरू करें")} ▶</span>`;
-                  }
-
                   return `
-                    <button class="journey-card ${cls}" type="button" 
-                      data-step-route="${s.route}" 
-                      data-step-locked="${s.locked ? "1" : "0"}" 
-                      data-step-lockmsg="${this.escape(s.lockMsg || "")}">
-                      <div class="step-no">${s.done ? "✓" : s.locked ? "🔒" : s.no}</div>
-                      <div class="jc-body">
-                        ${isCurrent ? `<span class="here-tag">${this.t("you are here", "आप यहाँ हैं")}</span>` : ""}
-                        <div class="step-card-header">
-                          <h3 style="margin:0">${s.title}</h3>
-                          ${statusBadge}
+                    <div class="card journey-card ${cls}" style="margin:0;padding:18px 20px;border-radius:14px;border:1.5px solid ${s.done ? "var(--teal)" : isCurrent ? "var(--vermilion)" : "var(--edge)"};background:var(--card);display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+                      <div style="display:flex;align-items:flex-start;gap:14px;flex:1;min-width:0;">
+                        <div style="width:36px;height:36px;min-width:36px;border-radius:50%;background:${s.done ? "var(--teal)" : s.locked ? "var(--field)" : "var(--vermilion)"};color:${s.locked ? "var(--ink-soft)" : "#fff"};display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.95rem;">
+                          ${s.done ? "✓" : s.locked ? "🔒" : s.no}
                         </div>
-                        <p style="margin:2px 0 0">${s.desc}</p>
+                        <div style="flex:1;">
+                          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                            <strong style="font-size:1.02rem;color:var(--ink);">${s.title}</strong>
+                            ${s.done ? `<span style="font-size:0.75rem;padding:2px 8px;background:rgba(45,212,191,0.12);color:var(--teal);border-radius:6px;font-weight:700;">✓ ${this.t("Completed", "पूर्ण")}</span>` : ""}
+                          </div>
+                          <p class="muted" style="margin:4px 0 0;font-size:0.85rem;line-height:1.45;">${s.desc}</p>
+                          ${!s.locked ? `
+                            <div style="height:5px;background:var(--field);border-radius:5px;overflow:hidden;margin-top:8px;max-width:240px;">
+                              <div style="height:100%;width:${s.done ? 100 : s.pct}%;background:${s.done ? "var(--teal)" : "var(--vermilion)"};"></div>
+                            </div>
+                          ` : ""}
+                        </div>
+                      </div>
+
+                      <div>
                         ${
-                          !s.locked
-                            ? `<div class="step-progress-row">
-                                <div class="step-progress-track">
-                                  <div class="step-progress-fill ${s.done ? "done" : "in-progress"}" style="width:${s.done ? 100 : s.pct}%"></div>
-                                </div>
-                                <span class="step-progress-pct">${s.done ? 100 : s.pct}%</span>
-                              </div>`
-                            : ""
+                          s.id === "step1_profile" && s.done
+                            ? `<button class="btn btn-outline btn-sm" type="button" data-step-route="onboarding" style="color:var(--teal);border-color:var(--teal);font-weight:700;">✓ ${this.t("Review / Edit", "समीक्षा / बदलें")} →</button>`
+                            : s.done
+                            ? `<button class="btn btn-outline btn-sm" type="button" data-go="report" style="color:var(--teal);border-color:var(--teal);font-weight:700;">✓ ${this.t("Completed · View Report", "पूर्ण · रिपोर्ट देखें")} →</button>`
+                            : s.locked
+                            ? `<button class="btn btn-outline btn-sm" type="button" data-step-route="${s.route}" data-step-locked="1" data-step-lockmsg="${this.escape(s.lockMsg)}" style="opacity:0.6;cursor:not-allowed;">🔒 ${this.t("Locked", "लॉक")}</button>`
+                            : s.pct > 0
+                            ? `<button class="btn btn-primary btn-sm" type="button" data-step-route="${s.route}">⚡ ${this.t("Resume", "जारी रखें")} (${s.pct}%) →</button>`
+                            : `<button class="btn btn-primary btn-sm" type="button" data-step-route="${s.route}">▶ ${this.t("Start", "शुरू करें")} →</button>`
                         }
                       </div>
-                    </button>`;
+                    </div>
+                  `;
                 })
                 .join("")}
             </div>
 
-            <!-- Stage Completion Celebration Card -->
+            <!-- Stage Completion Banner -->
             ${allQuestsDone ? `
-              <div class="card stage-completed-congrats-card" style="margin-top:20px;background:linear-gradient(135deg, rgba(31, 111, 102, 0.14), var(--card));border:2px solid var(--teal);border-radius:16px;padding:20px;">
-                <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
-                  <div style="font-size:2.8rem">🎓</div>
-                  <div style="flex:1;min-width:240px;">
-                    <div class="tiny" style="font-weight:800;color:var(--teal);letter-spacing:0.06em;">
-                      ${stageInfo.badgeIcon} ${isHi ? "चरण मूल्यांकन पूर्ण" : "STAGE ASSESSMENTS COMPLETED"} · ${stageInfo.groupNo} (${isHi ? stageInfo.gradeDisplayHi : stageInfo.gradeDisplay})
-                    </div>
-                    <h3 style="margin:4px 0 6px;color:var(--ink);">
-                      ${isHi ? "शानदार! आपके इस चरण के सभी आवश्यक परीक्षण पूर्ण हो गए हैं" : "Brilliant! You have completed all required assessments for your stage"}
-                    </h3>
-                    <p style="margin:0;font-size:0.92rem;color:var(--ink-soft);">
-                      ${isHi 
-                        ? "आपकी आधिकारिक साइकोमेट्रिक डायग्नोस्टिक रिपोर्ट तैयार है। रिपोर्ट देखने या सत्यापित करियर विकल्पों की तुलना करने के लिए नीचे टैप करें।"
-                        : "Your official psychometric diagnostic report is ready. View your detailed breakdown or explore recommended careers below."}
-                    </p>
+              <div class="card" style="margin-top:20px;padding:20px;background:rgba(45,212,191,0.08);border:2px solid var(--teal);border-radius:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;">
+                <div>
+                  <div class="tiny" style="font-weight:800;color:var(--teal);letter-spacing:0.06em;">
+                    🎉 ${this.t("ALL ASSESSMENTS COMPLETED", "सभी मूल्यांकन पूर्ण")}
                   </div>
-                  <div style="display:flex;gap:10px;flex-wrap:wrap;">
-                    <button class="btn btn-primary" type="button" data-go="report" style="padding:10px 20px;">
-                      📊 ${isHi ? "आधिकारिक रिपोर्ट देखें" : "View Official Report"} →
-                    </button>
-                    <button class="btn btn-secondary" type="button" data-go="explore" style="padding:10px 20px;">
-                      🧭 ${isHi ? "करियर एक्सप्लोर करें" : "Explore Careers"} →
-                    </button>
-                  </div>
+                  <h3 style="margin:4px 0 4px;font-size:1.1rem;color:var(--ink);">
+                    ${this.t("Your Official Psychometric Report is Ready", "आपकी आधिकारिक साइकोमेट्रिक रिपोर्ट तैयार है")}
+                  </h3>
+                  <p class="muted" style="margin:0;font-size:0.86rem;">
+                    ${this.t("View your 6-factor Holland code, cognitive aptitudes, and stream guidance.", "अपना 6-आयामी हॉलैंड कोड, अभिक्षमता स्कोर व स्ट्रीम मार्गदर्शन देखें।")}
+                  </p>
                 </div>
+                <button class="btn btn-primary" type="button" data-go="report">
+                  📊 ${this.t("View Official Report", "आधिकारिक रिपोर्ट देखें")} →
+                </button>
               </div>
             ` : ""}
           </div>
 
-          <div class="home-side">
-            ${
-              topMatches.length
-                ? `<div class="card">
-                    <div class="tiny">${this.t("Quick matches", "त्वरित मिलान")}</div>
-                    ${topMatches
-                      .map(
-                        (c) => `
-                      <button class="mini-match" type="button" data-career="${c.id}">
-                        <span>${c.icon} ${this.state.lang === "hi" ? c.hi : c.title}</span>
-                        <strong>${c.fit}%</strong>
-                      </button>`
-                      )
-                      .join("")}
-                    <button class="btn btn-secondary btn-block" style="margin-top:10px" type="button" data-go="report">${this.t("Open full report", "पूरी रिपोर्ट")}</button>
-                  </div>`
-                : `<div class="card">
-                    <div class="tiny">${this.t("Tip", "सुझाव")}</div>
-                    <p class="muted" style="margin:8px 0 0">${this.t(
-                      "Complete Step 2 (Interest Inventory) to unlock verified, explainable career matches.",
-                      "सत्यापित एवं समझने योग्य करियर मिलान अनलॉक करने के लिए स्टेप 2 (रुचि इन्वेंटरी) पूरा करें।"
-                    )}</p>
-                  </div>`
-            }
-            <div class="card tag-card" style="cursor:pointer;" data-open-saved="1">
-              <div class="tiny">${this.t("Saved careers", "सेव किए गए करियर")}</div>
-              <div class="tag-count">${this.getValidSavedCareers().length}</div>
-              ${this.getValidSavedCareers().length > 0 
-                ? `<button class="btn btn-ink btn-block" type="button" data-open-saved="1">⭐ ${this.t("View Roadmap & Mentors", "रोडमैप व हस्तियां देखें")} (${this.getValidSavedCareers().length}) →</button>`
-                : `<button class="btn btn-ink btn-block" type="button" data-open-saved="1">⭐ ${this.t("Open Saved Vault", "सेव तिजोरी खोलें")} →</button>`
+          <!-- RIGHT: TOP 3 CAREER MATCHES & SAVED VAULT -->
+          <div class="home-side" style="display:flex;flex-direction:column;gap:18px;">
+            <div class="card" style="margin:0;padding:20px;border-radius:16px;border:1.5px solid var(--edge);">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                <div class="tiny" style="font-weight:800;letter-spacing:0.06em;color:var(--ink-soft);">
+                  🚀 ${this.t("TOP 3 CAREER MATCHES", "शीर्ष 3 करियर विकल्प")}
+                </div>
+                ${topMatches.length ? `<span class="rich-badge" style="font-size:0.72rem;background:rgba(45,212,191,0.12);color:var(--teal);">Top Picks</span>` : ""}
+              </div>
+
+              ${
+                topMatches.length
+                  ? `
+                    <div style="display:flex;flex-direction:column;gap:10px;">
+                      ${topMatches
+                        .map(
+                          (c, idx) => `
+                        <button class="mini-match" type="button" data-career="${c.id}" style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:var(--field);border-radius:10px;border:1px solid var(--edge);width:100%;text-align:left;cursor:pointer;transition:all 0.15s ease;">
+                          <div style="display:flex;align-items:center;gap:10px;">
+                            <span style="font-size:1.3rem;">${c.icon}</span>
+                            <div>
+                              <div style="font-weight:700;font-size:0.88rem;color:var(--ink);">${this.state.lang === "hi" ? c.hi : c.title}</div>
+                              <div style="font-size:0.72rem;color:var(--ink-soft);">№ ${idx + 1} Best Fit Pathway</div>
+                            </div>
+                          </div>
+                          <span style="font-weight:800;color:var(--teal);font-size:0.92rem;background:rgba(45,212,191,0.12);padding:4px 8px;border-radius:6px;">${c.fit}%</span>
+                        </button>`
+                        )
+                        .join("")}
+                    </div>
+                    <button class="btn btn-secondary btn-block" style="margin-top:14px;width:100%;" type="button" data-go="report">
+                      📊 ${this.t("View Complete Assessment Report", "पूरी रिपोर्ट देखें")} →
+                    </button>
+                  `
+                  : `
+                    <div style="padding:14px;background:var(--field);border-radius:10px;text-align:center;">
+                      <span style="font-size:2rem;display:block;margin-bottom:6px;">🎯</span>
+                      <p class="muted" style="margin:0;font-size:0.86rem;line-height:1.45;">
+                        ${this.t(
+                          "Complete Step 2 (Interest Assessment) to preview your top 3 recommended career pathways.",
+                          "अपने शीर्ष 3 अनुशंसित करियर विकल्प देखने के लिए स्टेप 2 (रुचि मूल्यांकन) पूरा करें।"
+                        )}
+                      </p>
+                    </div>
+                  `
               }
             </div>
+
+            <!-- Saved Careers Vault Card -->
+            <div class="card tag-card" style="margin:0;padding:20px;border-radius:16px;border:1.5px solid var(--edge);cursor:pointer;" data-open-saved="1">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                <div class="tiny" style="font-weight:800;letter-spacing:0.06em;color:var(--ink-soft);">
+                  ⭐ ${this.t("SAVED CAREERS VAULT", "सेव किए गए करियर")}
+                </div>
+                <span class="tag-count" style="background:var(--vermilion);color:#fff;font-weight:800;padding:2px 8px;border-radius:12px;font-size:0.78rem;">
+                  ${this.getValidSavedCareers().length}
+                </span>
+              </div>
+              <p class="muted" style="font-size:0.84rem;margin:0 0 12px;line-height:1.4;">
+                ${this.t("Access your bookmarked roadmaps, role models, and eligibility details.", "अपने सुरक्षित किए गए रोडमैप, हस्तियां एवं योग्यता विवरण देखें।")}
+              </p>
+              <button class="btn btn-ink btn-block" type="button" data-open-saved="1" style="width:100%;">
+                ⭐ ${this.t("Open Saved Careers", "सेव करियर देखें")} →
+              </button>
+            </div>
+
           </div>
         </div>
       </div>`;
@@ -4416,7 +4344,7 @@ const App = {
         done: t2.done,
         pct: t1.pct < REQ_PCT ? 0 : t2.pct,
         locked: t1.pct < REQ_PCT,
-        lockMsg: isHi ? `🔒 अनलॉक करने के लिए पहले रुचि इन्वेंटरी (कम से कम ${REQ_PCT}%) पूरी करें!` : `🔒 Complete at least ${REQ_PCT}% of Interest Inventory to unlock!`,
+        lockMsg: isHi ? `🔒 अनलॉक करने के लिए पहले रुचि खोज (कम से कम ${REQ_PCT}%) पूरी करें!` : `🔒 Complete at least ${REQ_PCT}% of Find Your Interests to unlock!`,
         qCount: ft2.qCount || 28,
       },
       {
@@ -4428,7 +4356,7 @@ const App = {
         done: t3.done,
         pct: t2.pct < REQ_PCT ? 0 : t3.pct,
         locked: t2.pct < REQ_PCT,
-        lockMsg: isHi ? `🔒 अनलॉक करने के लिए पहले अभिक्षमता परीक्षण (कम से कम ${REQ_PCT}%) पूरा करें!` : `🔒 Complete at least ${REQ_PCT}% of Aptitude Test to unlock!`,
+        lockMsg: isHi ? `🔒 अनलॉक करने के लिए पहले अभिक्षमता खोज (कम से कम ${REQ_PCT}%) पूरा करें!` : `🔒 Complete at least ${REQ_PCT}% of Discover Your Aptitudes to unlock!`,
         qCount: ft3.qCount || 20,
       },
     ];
@@ -4482,12 +4410,7 @@ const App = {
                         ${t.locked ? "🔒" : t.icon}
                       </div>
                       <div style="flex:1;">
-                        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                          <strong style="font-size:1.05rem;color:var(--ink);">${t.title}</strong>
-                          <span class="pill-btn" style="font-size:0.72rem;padding:2px 8px;background:var(--field);color:var(--ink-soft);pointer-events:none;">
-                            ${t.badge}
-                          </span>
-                        </div>
+                        <strong style="font-size:1.05rem;color:var(--ink);display:block;">${t.title}</strong>
                         <p class="muted" style="margin:4px 0 0;font-size:0.84rem;line-height:1.45;">${t.sub}</p>
                         <div class="quiz-progress-wrap" style="height:6px;margin-top:10px;max-width:320px;">
                           <div class="quiz-progress-bar" style="width:${t.done ? 100 : t.pct}%"></div>
@@ -4497,7 +4420,7 @@ const App = {
                     <div>
                       ${
                         t.done
-                          ? `<button class="btn btn-outline btn-sm" type="button" data-start-tier="${t.id}" style="color:var(--teal);border-color:var(--teal);font-weight:700;">✓ ${this.t("Completed · Review", "पूर्ण · समीक्षा")} →</button>`
+                          ? `<button class="btn btn-outline btn-sm" type="button" data-go="report" style="color:var(--teal);border-color:var(--teal);font-weight:700;">✓ ${this.t("Completed · View Report", "पूर्ण · रिपोर्ट देखें")} →</button>`
                           : t.locked
                           ? `<button class="btn btn-outline btn-sm" type="button" data-start-tier="${t.id}" data-tier-locked="1" data-tier-lockmsg="${this.escape(t.lockMsg || "")}" style="opacity:0.65;cursor:not-allowed;">🔒 ${this.t("Locked", "लॉक")}</button>`
                           : t.pct > 0
@@ -4581,6 +4504,68 @@ const App = {
     }
     const isHi = this.state.lang === "hi";
     const activeTier = this.state.activeTier || "tier1_riasec";
+    const ft = window.DISHA_DATA?.frameworkTiers || {};
+    const ft1 = ft.tier1_riasec || {};
+    const ft2 = ft.tier2_tamanna || {};
+    const ft3 = ft.tier3_ocean || {};
+
+    const tierMetaMap = {
+      tier1_riasec: {
+        title: isHi ? ft1.titleHi : ft1.title,
+        sub: isHi ? `${ft1.qCount} प्रश्न · ${ft1.badgeHi}` : `${ft1.qCount} Questions · ${ft1.badge}`,
+        icon: ft1.icon || "🎯"
+      },
+      tier2_tamanna: {
+        title: isHi ? ft2.titleHi : ft2.title,
+        sub: isHi ? `${ft2.qCount} प्रश्न · ${ft2.badgeHi}` : `${ft2.qCount} Questions · ${ft2.badge}`,
+        icon: ft2.icon || "🧠"
+      },
+      tier3_ocean: {
+        title: isHi ? ft3.titleHi : ft3.title,
+        sub: isHi ? `${ft3.qCount} प्रश्न · ${ft3.badgeHi}` : `${ft3.qCount} Questions · ${ft3.badge}`,
+        icon: ft3.icon || "🌟"
+      },
+      mental_health: {
+        title: isHi ? "परीक्षा रेज़िलिएंस एवं आत्मविश्वास सूचकांक" : "Exam Resilience & Confidence Index",
+        sub: isHi ? "12 प्रश्न · परीक्षा तनाव प्रबंधन" : "12 Questions · Stress management & focus",
+        icon: "🧘"
+      }
+    };
+    const currentTierMeta = tierMetaMap[activeTier] || tierMetaMap.tier1_riasec;
+
+    // BUSINESS LOGIC: If assessment is already completed, lock and prevent retake
+    const isCompleted = this.tierProgress(activeTier).done;
+    if (isCompleted) {
+      return `
+        ${this.topbar({ title: BRAND, back: true, lang: true })}
+        <div class="screen" style="max-width:720px;margin:28px auto;padding:16px;">
+          <div class="card" style="padding:36px 24px;border-radius:22px;border:2px solid var(--teal);background:var(--card);text-align:center;box-shadow:0 8px 30px rgba(0,0,0,0.06);">
+            <div style="font-size:3.5rem;margin-bottom:12px;line-height:1;">🎉</div>
+            <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(45,212,191,0.14);color:var(--teal);border:1.5px solid var(--teal);padding:4px 14px;border-radius:999px;font-size:0.85rem;font-weight:800;margin-bottom:14px;">
+              ✓ ${this.t("Assessment Completed & Sealed", "मूल्यांकन पूर्ण एवं सुरक्षित")}
+            </div>
+            <h2 style="font-size:1.5rem;margin:0 0 10px;color:var(--ink);">
+              ${currentTierMeta.icon} ${currentTierMeta.title}
+            </h2>
+            <p class="muted" style="font-size:0.95rem;line-height:1.6;max-width:540px;margin:0 auto 26px;">
+              ${this.t(
+                "You have already successfully completed this assessment. As per standardized career guidance rules, completed assessments cannot be retaken to maintain psychometric accuracy. You can view your detailed psychological evaluation and stream recommendations in your Official Report.",
+                "आप इस मूल्यांकन को पहले ही सफलतापूर्वक पूरा कर चुके हैं। वैज्ञानिक करियर मार्गदर्शन नियमों के अनुसार, पूर्ण किए गए मूल्यांकन को दोबारा नहीं दिया जा सकता। आपके सभी विश्लेषण और परिणाम आधिकारिक रिपोर्ट में उपलब्ध हैं।"
+              )}
+            </p>
+            <div style="display:flex;justify-content:center;gap:14px;flex-wrap:wrap;">
+              <button class="btn btn-primary" type="button" data-go="report" style="padding:12px 26px;font-size:0.95rem;font-weight:800;">
+                📊 ${this.t("View Official Report", "आधिकारिक रिपोर्ट देखें")} →
+              </button>
+              <button class="btn btn-secondary" type="button" data-go="home" style="padding:12px 22px;font-size:0.95rem;">
+                🏠 ${this.t("Back to Dashboard", "डैशबोर्ड पर जाएँ")}
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
     let questions = (window.DISHA_ALL_QUESTIONS || []).filter((q) => q.tier === activeTier);
     if (!questions.length) questions = (window.DISHA_ALL_QUESTIONS || []).slice(0, 6);
 
@@ -4614,35 +4599,6 @@ const App = {
       fact: "Every skill and interest guides your unique roadmap.",
       factHi: "हर कौशल और रुचि आपके अनोखे करियर पथ को दिशा देती है।",
     };
-
-    const ft = window.DISHA_DATA?.frameworkTiers || {};
-    const ft1 = ft.tier1_riasec || {};
-    const ft2 = ft.tier2_tamanna || {};
-    const ft3 = ft.tier3_ocean || {};
-
-    const tierMetaMap = {
-      tier1_riasec: {
-        title: isHi ? ft1.titleHi : ft1.title,
-        sub: isHi ? `${ft1.qCount} प्रश्न · ${ft1.badgeHi}` : `${ft1.qCount} Questions · ${ft1.badge}`,
-        icon: ft1.icon || "🎯"
-      },
-      tier2_tamanna: {
-        title: isHi ? ft2.titleHi : ft2.title,
-        sub: isHi ? `${ft2.qCount} प्रश्न · ${ft2.badgeHi}` : `${ft2.qCount} Questions · ${ft2.badge}`,
-        icon: ft2.icon || "🧠"
-      },
-      tier3_ocean: {
-        title: isHi ? ft3.titleHi : ft3.title,
-        sub: isHi ? `${ft3.qCount} प्रश्न · ${ft3.badgeHi}` : `${ft3.qCount} Questions · ${ft3.badge}`,
-        icon: ft3.icon || "🌟"
-      },
-      mental_health: {
-        title: isHi ? "परीक्षा रेज़िलिएंस एवं आत्मविश्वास सूचकांक" : "Exam Resilience & Confidence Index",
-        sub: isHi ? "12 प्रश्न · परीक्षा तनाव प्रबंधन" : "12 Questions · Stress management & focus",
-        icon: "🧘"
-      }
-    };
-    const currentTierMeta = tierMetaMap[activeTier] || tierMetaMap.tier1_riasec;
 
     return `
       ${this.topbar({ title: BRAND, back: true, pause: true, lang: true })}
@@ -5048,23 +5004,18 @@ const App = {
       fillColor: "rgba(45, 212, 191, 0.22)",
     });
 
-    const matches = this.matches().slice(0, 4);
+    const matches = this.matches().slice(0, 3);
 
     // Automatically synchronize the latest generated report to MySQL
     setTimeout(() => this.syncWithDatabase(), 50);
 
     return `
       ${this.topbar({ title: this.t("Diagnostic Psychometric Report", "डायग्नोस्टिक साइकोमेट्रिक रिपोर्ट"), back: true, lang: true })}
-      <div class="screen" id="report-print" style="max-width:1080px;">
-        
-        <div class="report-actions" style="display:flex;justify-content:flex-end;gap:10px;margin-bottom:16px;">
-          <button class="pill-btn with-ico" type="button" data-print="1">${ICON.print} ${this.t("Print / Official PDF", "प्रिंट / आधिकारिक PDF")}</button>
-          <button class="pill-btn with-ico" type="button" data-go="compare">${ICON.compare} ${this.t("Compare Careers", "करियर तुलना")}</button>
-        </div>
+      <div class="screen" id="report-print" style="max-width:1080px;margin:0 auto;padding-bottom:50px;">
 
-        <div class="printable-report-card">
+        <div class="printable-report-card" style="background:var(--card);border-radius:18px;border:1.5px solid var(--edge);padding:28px;">
           <!-- Report Header -->
-          <div class="report-header-banner">
+          <div class="report-header-banner" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;margin-bottom:24px;border-bottom:1.5px solid var(--edge);padding-bottom:20px;">
             <div style="display:flex;align-items:center;gap:14px;">
               <div class="logo sm" style="width:48px;height:48px;">${LOGO_SVG}</div>
               <div>
@@ -5079,7 +5030,7 @@ const App = {
             </div>
 
             <div style="text-align:right;">
-              <div style="font-weight:800;font-size:0.95rem;color:var(--ink)">${this.escape(p.school || "Government High School")}</div>
+              <div style="font-weight:800;font-size:0.95rem;color:var(--ink)">${this.escape(p.school || "Kendriya Vidyalaya")}</div>
               <div class="muted" style="font-size:0.8rem">${this.t("Career Guidance & Development Cell", "करियर काउंसलिंग एवं विकास प्रकोष्ठ")}</div>
               <div class="rich-badge" style="background:${stageInfo.stageBg};border-color:${stageInfo.stageColor};display:inline-block;margin-top:6px;font-size:0.78rem;font-weight:800;color:var(--ink);">
                 ${stageInfo.badgeIcon} ${stageInfo.groupNo} (${stageInfo.classesLabel}) · ${isHi ? stageInfo.stageHi : stageInfo.stage}
@@ -5088,7 +5039,7 @@ const App = {
           </div>
 
           <!-- Student Metadata Strip -->
-          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));gap:16px;padding:16px 20px;background:var(--field);border-radius:14px;border:1.5px solid var(--edge);margin-bottom:28px;">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(min(100%, 140px), 1fr));gap:14px;padding:16px 18px;background:var(--field);border-radius:14px;border:1.5px solid var(--edge);margin-bottom:28px;">
             <div>
               <span class="tiny">${this.t("STUDENT NAME", "छात्र का नाम")}</span>
               <div style="font-weight:800;font-size:1.05rem;color:var(--ink)">${this.escape(p.name || "Student")}</div>
@@ -5158,7 +5109,7 @@ const App = {
                   <span style="font-size:2.2rem">🌱</span>
                   <div>
                     <h3 style="margin:0 0 4px;font-size:1.05rem;color:var(--teal);">
-                      ${this.t("Foundation Stage (Classes 6–8): Interest Exploration Focus", "फाउंडेशन स्टेज (कक्षा 6–8): रुचि अन्वेषण पर केंद्रित")}
+                      ${this.t("Discovery Stage (Classes 6–8): Interest Discovery Focus", "डिस्कवरी स्टेज (कक्षा 6–8): रुचि खोज पर केंद्रित")}
                     </h3>
                     <p class="muted" style="margin:0;font-size:0.88rem;line-height:1.5">
                       ${this.t(
@@ -5170,7 +5121,7 @@ const App = {
                 </div>
               </div>
             ` : isTier2Done ? `
-              <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:16px;">
+              <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(min(100%, 260px), 1fr));gap:16px;">
                 ${tamannaList
                   .map((tam) => {
                     const b = MoineeScore.band(tam.score);
@@ -5276,10 +5227,10 @@ const App = {
             `}
           </div>
 
-          <!-- SECTION 4: Top Career Matches -->
-          <div>
+          <!-- SECTION 4: Top Career Matches (Strictly Top 3) -->
+          <div style="margin-bottom:28px;">
             <h2 style="font-size:1.22rem;display:flex;align-items:center;gap:8px;margin-bottom:14px;border-bottom:1.5px solid var(--edge);padding-bottom:8px;">
-              <span>🚀</span> 4. ${this.t("Recommended Career Pathways", "अनुशंसित करियर मार्ग")}
+              <span>🚀</span> 4. ${this.t("Top 3 Recommended Career Pathways", "शीर्ष 3 अनुशंसित करियर मार्ग")}
             </h2>
 
             <div class="career-grid">
@@ -5304,6 +5255,24 @@ const App = {
                 .join("")}
             </div>
           </div>
+
+          <!-- Official PDF Download & Print Section at the Bottom -->
+          <div class="report-footer-actions" style="margin-top:32px;padding-top:20px;border-top:1.5px solid var(--edge);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;">
+            <div>
+              <div style="font-weight:700;font-size:0.95rem;color:var(--ink);">
+                ${this.t("Official CDGC Psychometric Diagnostic Certificate", "आधिकारिक CDGC साइकोमेट्रिक डायग्नोस्टिक प्रमाण पत्र")}
+              </div>
+              <div class="muted" style="font-size:0.82rem;">
+                ${this.t("Standardized Career Guidance & Development Cell evaluation document", "मानकीकृत करियर परामर्श एवं विकास प्रकोष्ठ मूल्यांकन दस्तावेज़")}
+              </div>
+            </div>
+            <div style="display:flex;gap:10px;">
+              <button class="btn btn-primary" type="button" data-print="1" style="padding:10px 22px;font-size:0.92rem;font-weight:700;">
+                📄 ${this.t("Download / Print Official PDF", "आधिकारिक PDF डाउनलोड / प्रिंट करें")}
+              </button>
+            </div>
+          </div>
+
         </div>
       </div>`;
   },
@@ -6480,24 +6449,30 @@ const App = {
       const statsRes = await fetch("api/counselor.php?action=dashboard_stats");
       const statsData = await statsRes.json();
       if (statsData && statsData.success) {
-        this.state.counselorStats = statsData.stats;
+        this.state.counselorStats = statsData.data || statsData.stats;
       }
     } catch (_) {
       if (!this.state.counselorStats) {
         this.state.counselorStats = {
-          total_students: 41,
-          total_completed: 36,
-          top_holland: "IES (Investigative-Enterprising-Social)",
-          pending_sessions: 5,
-          riasec_cohort: { R: 62, I: 78, A: 54, S: 71, E: 69, C: 58 }
+          totalStudents: 156,
+          group1Count: 48,
+          group2Count: 58,
+          group3Count: 50,
+          completedAssessments: 246,
+          schoolsCount: 4,
+          schools: ["Kendriya Vidyalaya No. 1", "Delhi Public School", "St. Xavier's Senior Secondary School", "Army Public School"],
+          riasecAverages: { R: 72, I: 85, A: 60, S: 75, E: 80, C: 68 }
         };
       }
     }
 
     try {
-      const rosterRes = await fetch("api/counselor.php?action=students_roster");
+      const search = this.state.adminSearch || this.state.counselorSearch || "";
+      const cohort = this.state.adminCohortFilter || "all";
+      const school = this.state.adminSchoolFilter || "all";
+      const rosterRes = await fetch(`api/counselor.php?action=students_roster&search=${encodeURIComponent(search)}&cohort=${encodeURIComponent(cohort)}&school=${encodeURIComponent(school)}`);
       const rosterData = await rosterRes.json();
-      if (rosterData && rosterData.success && Array.isArray(rosterData.students) && rosterData.students.length) {
+      if (rosterData && rosterData.success && Array.isArray(rosterData.students)) {
         this.state.counselorStudents = rosterData.students;
       } else if (!this.state.counselorStudents || !this.state.counselorStudents.length) {
         this.state.counselorStudents = this.getDefaultCounselorStudents();
@@ -6516,9 +6491,9 @@ const App = {
     this.render();
 
     try {
-      const res = await fetch(`api/counselor.php?action=student_detail&studentId=${encodeURIComponent(studentId)}`);
+      const res = await fetch(`api/counselor.php?action=student_detail&student_id=${encodeURIComponent(studentId)}`);
       const data = await res.json();
-      if (data && data.success) {
+      if (data && data.success && data.student) {
         this.state.counselorStudentDetail = data;
       } else {
         throw new Error("API fallback");
@@ -6528,18 +6503,12 @@ const App = {
       const s = all.find(x => String(x.id) === String(studentId)) || all[0];
       this.state.counselorStudentDetail = {
         student: s,
-        scores: { I: 85, E: 76, S: 72, R: 64, C: 60, A: 55 },
-        record: {
-          notes: "Student demonstrates strong logical-analytical reasoning with consistent high focus in mathematics and problem-solving.",
-          recommended_stream: s.recommended_stream || "Science (PCM)",
-          next_session_date: "2026-10-05 10:30",
-          parent_contacted: s.parent_contacted ? 1 : 0
-        },
-        matches: [
-          { title: s.top_career || "Software Architect / AI Specialist", fit: 94, stream: s.recommended_stream || "Science (PCM)" },
-          { title: "Data Scientist & Analytics Lead", fit: 89, stream: "PCM / Statistics" },
-          { title: "Robotics & Embedded Systems Engineer", fit: 86, stream: "PCM (Science)" }
-        ]
+        scores: s.riasecScores || { I: 85, E: 76, S: 72, R: 64, C: 60, A: 55 },
+        tamanna: s.tamannaScores || { logical: 85, spatial: 80, numerical: 82, verbal: 78, language: 75, perceptual: 72, mechanical: 68 },
+        matches: (s.topCareerMatches || ["robotics_engineer", "data_scientist", "ui_ux_designer"]).map(id => {
+          const c = this.getCareerById(id) || { title: id, fit: 90 };
+          return { id: id, title: c.title || id, fit: c.fit || 90 };
+        })
       };
     } finally {
       this.state.counselorModalLoading = false;
@@ -6553,93 +6522,22 @@ const App = {
     this.render();
   },
 
-  async saveCounselorNote(studentId, e) {
-    if (e) { e.preventDefault(); e.stopPropagation(); }
-    const noteEl = document.getElementById("counselor-modal-notes");
-    const streamEl = document.getElementById("counselor-modal-rec-stream");
-    const sessionDateEl = document.getElementById("counselor-modal-next-session");
-    const parentCheckEl = document.getElementById("counselor-modal-parent-contacted");
-
-    const notes = (noteEl?.value || "").trim();
-    const stream = (streamEl?.value || "PCM").trim();
-    const nextSession = (sessionDateEl?.value || "").trim();
-    const parentContacted = parentCheckEl ? (parentCheckEl.checked ? 1 : 0) : 0;
-
-    const btn = document.getElementById("counselor-save-note-btn");
-    if (btn) {
-      btn.disabled = true;
-      btn.textContent = this.t("Saving Note to DB...", "डेटाबेस में सेव हो रहा है...");
-    }
-
-    try {
-      const res = await fetch("api/counselor.php?action=save_note", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          studentId: studentId,
-          notes: notes,
-          recommendedStream: stream,
-          nextSessionDate: nextSession,
-          parentContacted: parentContacted,
-          counselorId: this.state.auth?.id || "usr-counselor-1"
-        })
-      });
-      const data = await res.json();
-      if (data && data.success) {
-        this.toast(this.t("✅ Counselor notes & stream recommendation saved to database!", "✅ परामर्शदाता नोट्स एवं स्ट्रीम अनुशंसा डेटाबेस में सेव हो गई!"));
-        if (this.state.counselorStudentDetail && this.state.counselorStudentDetail.student) {
-          this.state.counselorStudentDetail.record = {
-            notes: notes,
-            recommended_stream: stream,
-            next_session_date: nextSession,
-            parent_contacted: parentContacted,
-            session_date: new Date().toISOString().slice(0, 19).replace("T", " ")
-          };
-        }
-        await this.loadCounselorDashboard();
-      } else {
-        this.toast(data?.message || this.t("Failed to save note.", "नोट सेव करने में त्रुटि।"));
-      }
-    } catch (_) {
-      this.toast(this.t("✅ Saved locally! Synchronized with database.", "✅ लोकली सेव हुआ! डेटाबेस से सिंक किया गया।"));
-    } finally {
-      if (btn) {
-        btn.disabled = false;
-        btn.textContent = this.t("💾 Save Case Note & Action Plan", "💾 केस नोट व कार्ययोजना सेव करें");
-      }
-      this.render();
-    }
-  },
-
-  scheduleCounselorSession(studentId, e) {
-    if (e) { e.preventDefault(); e.stopPropagation(); }
-    const sessionInput = document.getElementById("counselor-modal-next-session");
-    if (sessionInput) {
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      tomorrow.setHours(10, 0, 0, 0);
-      const iso = tomorrow.toISOString().slice(0, 16);
-      sessionInput.value = iso;
-      this.toast(this.t("📅 Session scheduled for tomorrow 10:00 AM. Click 'Save' to confirm.", "📅 कल सुबह 10:00 बजे का सत्र निर्धारित। कन्फर्म करने हेतु 'Save' दबाएँ।"));
-    }
-  },
-
   exportCohortSummary() {
     const students = this.state.counselorStudents || [];
     if (!students.length) {
       this.toast(this.t("No student records to export.", "एक्सपोर्ट करने हेतु कोई डेटा नहीं है।"));
       return;
     }
-    const headers = ["ID", "Name", "Grade", "School", "Holland Code", "Top Career", "Recommended Stream", "Next Session"];
+    const headers = ["ID", "Name", "Grade", "Cohort Stage", "School", "Holland Code", "Completed Levels", "Top Match"];
     const rows = students.map(s => [
       s.id,
       `"${s.name || ""}"`,
       s.grade || "",
+      `"${s.cohortLabel || ""}"`,
       `"${s.school || ""}"`,
-      s.holland_code || "",
-      `"${s.top_career || ""}"`,
-      `"${s.recommended_stream || ""}"`,
-      s.next_session_date || ""
+      s.hollandCode || s.holland_code || "",
+      `"${(s.completedLevels || []).join(", ")}"`,
+      `"${(s.topCareerMatches && s.topCareerMatches[0]) || s.top_career || ""}"`
     ]);
     const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
     const encodedUri = encodeURI(csvContent);
@@ -6654,412 +6552,304 @@ const App = {
 
   viewCounselor() {
     const isHi = this.state.lang === "hi";
-    const subTab = this.state.counselorSubTab || "dashboard";
     const stats = this.state.counselorStats || {
-      total_students: 41,
-      total_completed: 36,
-      top_holland: "IES (Investigative-Enterprising-Social)",
-      pending_sessions: 5,
-      riasec_cohort: { R: 62, I: 78, A: 54, S: 71, E: 69, C: 58 }
+      totalStudents: 156,
+      group1Count: 48,
+      group2Count: 58,
+      group3Count: 50,
+      completedAssessments: 246,
+      schoolsCount: 4,
+      schools: ["Kendriya Vidyalaya No. 1", "Delhi Public School", "St. Xavier's Senior Secondary School", "Army Public School"]
     };
     const allStudents = this.state.counselorStudents || [];
-    const counselorName = this.state.auth?.name || "Dr. Sunita Sharma";
+    const adminName = this.state.auth?.name || "Dr. Sunita Rao (Director, CDGC)";
 
     // Filtering
-    const q = (this.state.counselorSearch || "").toLowerCase();
-    const gFilter = this.state.counselorGradeFilter || "all";
+    const q = (this.state.adminSearch || "").toLowerCase();
+    const cohortFilter = this.state.adminCohortFilter || "all";
+    const schoolFilter = this.state.adminSchoolFilter || "all";
+
     const filteredStudents = allStudents.filter(s => {
-      const matchQ = !q || (s.name && s.name.toLowerCase().includes(q)) || (s.school && s.school.toLowerCase().includes(q)) || (s.top_career && s.top_career.toLowerCase().includes(q));
-      const matchG = gFilter === "all" || String(s.grade) === String(gFilter);
-      return matchQ && matchG;
+      const matchQ = !q || (s.name && s.name.toLowerCase().includes(q)) || (s.school && s.school.toLowerCase().includes(q)) || (s.email && s.email.toLowerCase().includes(q));
+      let matchCohort = true;
+      if (cohortFilter === "group_1") matchCohort = (s.cohortGroup === "group_1" || parseInt(s.grade, 10) <= 8);
+      else if (cohortFilter === "group_2") matchCohort = (s.cohortGroup === "group_2" || ["9", "10"].includes(String(s.grade)));
+      else if (cohortFilter === "group_3") matchCohort = (s.cohortGroup === "group_3" || ["11", "12"].includes(String(s.grade)));
+
+      const matchSchool = (schoolFilter === "all" || s.school === schoolFilter);
+      return matchQ && matchCohort && matchSchool;
     });
 
     return `
-      ${this.topbar({ title: this.t("Counselor Suite", "परामर्शदाता कक्ष"), lang: true, avatar: true })}
+      ${this.topbar({ title: this.t("CDGC Admin Portal", "प्रशासनिक एवं संस्थागत डैशबोर्ड"), lang: true, avatar: true })}
       
-      <div class="screen counselor-portal" style="max-width:1320px;margin:0 auto;padding-bottom:50px;">
+      <div class="screen admin-portal" style="max-width:1300px;margin:0 auto;padding-bottom:50px;">
         
-        <!-- COUNSELOR EXECUTIVE HEADER -->
-        <div class="counselor-header-card">
-          <div class="counselor-header-left">
-            <div class="counselor-avatar-badge">
-              <span class="c-badge-icon">🎓</span>
+        <!-- ADMIN EXECUTIVE HEADER -->
+        <div class="card admin-header-card" style="margin-bottom:24px;padding:24px;background:var(--card);border:1.5px solid var(--edge);border-radius:18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;">
+          <div style="display:flex;align-items:center;gap:16px;">
+            <div style="width:54px;height:54px;border-radius:14px;background:linear-gradient(135deg, var(--teal), #2563eb);color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.8rem;font-weight:800;">
+              🏛️
             </div>
             <div>
-              <div class="counselor-cluster-pill">
-                🏫 Kendriya Vidyalaya & Affiliated Cluster · Cluster ID: #KV-DL-04
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+                <span class="rich-badge" style="background:rgba(45,212,191,0.12);color:var(--teal);font-size:0.76rem;font-weight:800;">
+                  National Framework CDGC Cell
+                </span>
+                <span style="font-size:0.8rem;color:var(--ink-soft);">Cluster ID: #CDGC-IN-2026</span>
               </div>
-              <h1 class="counselor-title">
-                ${this.t("Welcome, ", "नमस्ते, ")} ${this.escape(counselorName)}
+              <h1 style="margin:2px 0 4px;font-size:1.65rem;letter-spacing:-0.02em;color:var(--ink);">
+                ${this.t("Institutional Analytics & Cohort Admin", "संस्थागत विश्लेषण एवं कोहॉर्ट प्रशासन")}
               </h1>
-              <p class="counselor-subtitle">
+              <p class="muted" style="margin:0;font-size:0.88rem;">
                 ${this.t(
-                  "Real-time institutional diagnostics, psychometric analytics & Class 10/12 stream advisory dashboard.",
-                  "संस्थागत साइकोमेट्रिक डायग्नोस्टिक्स, योग्यता विश्लेषण एवं कक्षा 10वीं/12वीं स्ट्रीम परामर्श डैशबोर्ड।"
+                  "Real-time monitoring across 3 Student Cohorts (Discovery, Exploration, Decision Stages) & Partner Schools.",
+                  "3 छात्र समूहों (डिस्कवरी, एक्सप्लोरेशन, डिसीजन स्टेज) एवं भागीदार विद्यालयों की वास्तविक समय निगरानी।"
                 )}
               </p>
             </div>
           </div>
 
-          <div class="counselor-header-actions">
-            <button type="button" class="btn-counselor-action outline" data-export-cohort="1" title="${this.t("Download full cohort data as CSV", "CSV डाउनलोड करें")}">
-              📥 ${this.t("Export Cohort CSV", "CSV रिपोर्ट")}
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <button type="button" class="btn btn-secondary btn-sm" data-export-cohort="1">
+              📥 ${this.t("Export Cohort CSV", "CSV रिपोर्ट डाउनलोड")}
             </button>
-            <button type="button" class="btn-counselor-action" data-counselor-refresh="1" title="${this.t("Refresh real-time data from database", "डेटाबेस से रिफ्रेश करें")}">
-              🔄 ${this.t("Sync DB", "डेटाबेस सिंक")}
-            </button>
-            <button type="button" class="btn-counselor-action secondary" onclick="App.go('home')" title="${this.t("Preview platform from a Student perspective", "विद्यार्थी के रूप में देखें")}">
-              👁️ ${this.t("Student Preview Mode", "विद्यार्थी दृश्य")}
+            <button type="button" class="btn btn-primary btn-sm" data-counselor-refresh="1">
+              🔄 ${this.t("Sync Live DB", "डेटाबेस सिंक")}
             </button>
           </div>
         </div>
 
-        <!-- COUNSELOR SUB-NAVIGATION TABS -->
-        <div class="counselor-subnav-bar">
-          <button type="button" class="counselor-nav-pill ${subTab === "dashboard" ? "active" : ""}" data-counselor-subtab="dashboard">
-            <span class="c-pill-icon">📊</span>
-            <span>${this.t("Cohort Analytics & Overview", "समूह विश्लेषण व अवलोकन")}</span>
-          </button>
-          <button type="button" class="counselor-nav-pill ${subTab === "roster" ? "active" : ""}" data-counselor-subtab="roster">
-            <span class="c-pill-icon">👥</span>
-            <span>${this.t("Student Roster & Diagnostics", "विद्यार्थी सूची व साइकोमेट्रिक्स")}</span>
-            <span class="c-pill-count">${allStudents.length || 41}</span>
-          </button>
-          <button type="button" class="counselor-nav-pill ${subTab === "sessions" ? "active" : ""}" data-counselor-subtab="sessions">
-            <span class="c-pill-icon">📅</span>
-            <span>${this.t("Counseling Sessions & Queue", "परामर्श सत्र व समय सारणी")}</span>
-            <span class="c-pill-count warning">${stats.pending_sessions || 5}</span>
-          </button>
-          <button type="button" class="counselor-nav-pill ${subTab === "streams" ? "active" : ""}" data-counselor-subtab="streams">
-            <span class="c-pill-icon">🎯</span>
-            <span>${this.t("Stream Advisory Matrix (Class 10)", "स्ट्रीम चयन परामर्श (10वीं)")}</span>
-          </button>
+        <!-- 6 EXECUTIVE KPI CARDS ACROSS 3 COHORTS & SCHOOLS -->
+        <div class="admin-kpi-grid" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(190px, 1fr));gap:14px;margin-bottom:24px;">
+          
+          <div class="card" style="margin:0;padding:16px;border-radius:14px;border:1.5px solid var(--edge);">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+              <span class="tiny" style="font-weight:800;color:var(--ink-soft);">${this.t("TOTAL ENROLLED", "कुल छात्र")}</span>
+              <span style="font-size:1.2rem;">👥</span>
+            </div>
+            <div style="font-size:1.7rem;font-weight:900;color:var(--ink);">${stats.totalStudents || 156}</div>
+            <div style="font-size:0.75rem;color:var(--ink-soft);margin-top:2px;">Across 3 Cohort Stages</div>
+          </div>
+
+          <div class="card" style="margin:0;padding:16px;border-radius:14px;border:1.5px solid rgba(224,159,62,0.4);background:rgba(224,159,62,0.06);">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+              <span class="tiny" style="font-weight:800;color:var(--marigold);">${this.t("GROUP I (CLASSES 6–8)", "ग्रुप I (कक्षा 6–8)")}</span>
+              <span style="font-size:1.2rem;">🌱</span>
+            </div>
+            <div style="font-size:1.7rem;font-weight:900;color:var(--ink);">${stats.group1Count || 48}</div>
+            <div style="font-size:0.75rem;color:var(--ink-soft);margin-top:2px;">Discovery: RIASEC Only</div>
+          </div>
+
+          <div class="card" style="margin:0;padding:16px;border-radius:14px;border:1.5px solid rgba(45,212,191,0.4);background:rgba(45,212,191,0.06);">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+              <span class="tiny" style="font-weight:800;color:var(--teal);">${this.t("GROUP II (CLASSES 9–10)", "ग्रुप II (कक्षा 9–10)")}</span>
+              <span style="font-size:1.2rem;">🧭</span>
+            </div>
+            <div style="font-size:1.7rem;font-weight:900;color:var(--ink);">${stats.group2Count || 58}</div>
+            <div style="font-size:0.75rem;color:var(--ink-soft);margin-top:2px;">Exploration: RIASEC + TAMANNA</div>
+          </div>
+
+          <div class="card" style="margin:0;padding:16px;border-radius:14px;border:1.5px solid rgba(56,189,248,0.4);background:rgba(56,189,248,0.06);">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+              <span class="tiny" style="font-weight:800;color:#0284c7;">${this.t("GROUP III (CLASSES 11–12)", "ग्रुप III (कक्षा 11–12)")}</span>
+              <span style="font-size:1.2rem;">🎓</span>
+            </div>
+            <div style="font-size:1.7rem;font-weight:900;color:var(--ink);">${stats.group3Count || 50}</div>
+            <div style="font-size:0.75rem;color:var(--ink-soft);margin-top:2px;">Decision: RIASEC+TAMANNA+OCEAN</div>
+          </div>
+
+          <div class="card" style="margin:0;padding:16px;border-radius:14px;border:1.5px solid var(--edge);">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+              <span class="tiny" style="font-weight:800;color:var(--ink-soft);">${this.t("COMPLETED TESTS", "पूर्ण मूल्यांकन")}</span>
+              <span style="font-size:1.2rem;">🎯</span>
+            </div>
+            <div style="font-size:1.7rem;font-weight:900;color:var(--teal);">${stats.completedAssessments || 246}</div>
+            <div style="font-size:0.75rem;color:var(--ink-soft);margin-top:2px;">92.4% Diagnostic Completion</div>
+          </div>
+
+          <div class="card" style="margin:0;padding:16px;border-radius:14px;border:1.5px solid var(--edge);">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+              <span class="tiny" style="font-weight:800;color:var(--ink-soft);">${this.t("PARTNER SCHOOLS", "संबद्ध विद्यालय")}</span>
+              <span style="font-size:1.2rem;">🏫</span>
+            </div>
+            <div style="font-size:1.7rem;font-weight:900;color:var(--ink);">${stats.schoolsCount || 4}</div>
+            <div style="font-size:0.75rem;color:var(--ink-soft);margin-top:2px;">Institutional Clusters</div>
+          </div>
+
         </div>
 
-        <!-- EXECUTIVE KPI STATS CARDS -->
-        <div class="counselor-stats-grid">
-          <div class="counselor-stat-card">
-            <div class="c-stat-icon-wrap" style="background:rgba(13,148,136,0.12);color:var(--counselor-teal);">👥</div>
-            <div class="c-stat-content">
-              <div class="c-stat-val">${stats.total_students || 41}</div>
-              <div class="c-stat-label">${this.t("Total Enrolled Cohort", "कुल पंजीकृत विद्यार्थी")}</div>
-              <div class="c-stat-sub">Across Classes 9, 10, 11, 12</div>
-            </div>
-          </div>
-
-          <div class="counselor-stat-card">
-            <div class="c-stat-icon-wrap" style="background:rgba(37,99,235,0.12);color:#2563eb;">🎯</div>
-            <div class="c-stat-content">
-              <div class="c-stat-val">${stats.total_completed || 36}</div>
-              <div class="c-stat-label">${this.t("Assessments Completed", "मूल्यांकन पूर्ण")}</div>
-              <div class="c-stat-sub">87.8% diagnostic coverage</div>
-            </div>
-          </div>
-
-          <div class="counselor-stat-card">
-            <div class="c-stat-icon-wrap" style="background:rgba(217,119,6,0.12);color:#d97706;">🧭</div>
-            <div class="c-stat-content">
-              <div class="c-stat-val" style="font-size:1.35rem;">IES</div>
-              <div class="c-stat-label">${this.t("Dominant Holland Code", "प्रमुख हॉलैंड कोड")}</div>
-              <div class="c-stat-sub">Investigative + Enterprising + Social</div>
-            </div>
-          </div>
-
-          <div class="counselor-stat-card">
-            <div class="c-stat-icon-wrap" style="background:rgba(225,29,72,0.12);color:#e11d48;">⏳</div>
-            <div class="c-stat-content">
-              <div class="c-stat-val">${stats.pending_sessions || 5}</div>
-              <div class="c-stat-label">${this.t("Pending 1:1 Reviews", "लंबित 1:1 मार्गदर्शन")}</div>
-              <div class="c-stat-sub">Requires follow-up action</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- SUBTAB 1: COHORT ANALYTICS -->
-        ${subTab === "dashboard" ? `
-          <div class="counselor-content-grid" style="display:grid;grid-template-columns:1.5fr 1fr;gap:20px;margin-top:24px;">
+        <!-- COHORT FILTER BUTTONS & TOOLBAR -->
+        <div class="card admin-toolbar-card" style="margin-bottom:20px;padding:18px 20px;background:var(--card);border:1.5px solid var(--edge);border-radius:16px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;">
             
-            <!-- RIASEC Cohort Distribution -->
-            <div class="counselor-card">
-              <div class="c-card-header">
-                <div>
-                  <h3 class="c-card-title">🔬 ${this.t("Cohort RIASEC Psychometric Distribution", "समूह का RIASEC साइकोमेट्रिक वितरण")}</h3>
-                  <p class="c-card-desc">${this.t("Aggregated psychological interest profile across all 41 students", "सभी 41 विद्यार्थियों का औसत मनोवैज्ञानिक रुचि प्रोफ़ाइल")}</p>
-                </div>
-                <span class="c-badge-teal">Live Database Aggregation</span>
-              </div>
+            <!-- Cohort Stage Filter Pills -->
+            <div class="admin-cohort-pills" style="display:flex;gap:8px;flex-wrap:wrap;">
+              <button 
+                type="button" 
+                class="pill-btn ${cohortFilter === "all" ? "active" : ""}" 
+                data-admin-cohort-filter="all"
+                style="${cohortFilter === "all" ? "background:var(--ink);color:#fff;font-weight:800;" : "background:var(--field);color:var(--ink);font-weight:600;"}padding:8px 16px;font-size:0.84rem;border-radius:10px;cursor:pointer;border:1px solid var(--edge);"
+              >
+                ${this.t("All Cohorts", "सभी कोहॉर्ट")} (${allStudents.length || 156})
+              </button>
               
-              <div class="riasec-cohort-bars" style="margin-top:16px;">
-                ${[
-                  { key: "I", name: "Investigative (खोजी)", desc: "Analytical, scientific, logical problem solving", score: stats.riasec_cohort?.I || 78, color: "#2563eb" },
-                  { key: "S", name: "Social (सामाजिक)", desc: "Teaching, counseling, community leadership", score: stats.riasec_cohort?.S || 71, color: "#0d9488" },
-                  { key: "E", name: "Enterprising (उद्यमी)", desc: "Leadership, business, debating, negotiation", score: stats.riasec_cohort?.E || 69, color: "#f59e0b" },
-                  { key: "R", name: "Realistic (व्यावहारिक)", desc: "Hands-on, technical, engineering, hardware", score: stats.riasec_cohort?.R || 62, color: "#dc2626" },
-                  { key: "C", name: "Conventional (पारंपरिक)", desc: "Organized, data management, structured systems", score: stats.riasec_cohort?.C || 58, color: "#7c3aed" },
-                  { key: "A", name: "Artistic (कलात्मक)", desc: "Creative expression, media, design, innovation", score: stats.riasec_cohort?.A || 54, color: "#ec4899" },
-                ].map(r => `
-                  <div class="r-bar-item" style="margin-bottom:14px;">
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;font-size:0.86rem;">
-                      <div>
-                        <strong style="color:${r.color};margin-right:6px;">[${r.key}]</strong>
-                        <strong>${r.name}</strong>
-                        <span style="font-size:0.75rem;color:var(--ink-soft);margin-left:6px;">· ${r.desc}</span>
-                      </div>
-                      <div style="font-weight:800;color:var(--ink);">${r.score}%</div>
-                    </div>
-                    <div style="height:10px;background:var(--paper-3);border-radius:10px;overflow:hidden;position:relative;">
-                      <div style="width:${r.score}%;height:100%;background:${r.color};border-radius:10px;transition:width 0.6s ease;"></div>
-                    </div>
-                  </div>
-                `).join("")}
-              </div>
+              <button 
+                type="button" 
+                class="pill-btn ${cohortFilter === "group_1" ? "active" : ""}" 
+                data-admin-cohort-filter="group_1"
+                style="${cohortFilter === "group_1" ? "background:var(--marigold);color:var(--ink);font-weight:800;" : "background:var(--field);color:var(--ink);font-weight:600;"}padding:8px 16px;font-size:0.84rem;border-radius:10px;cursor:pointer;border:1px solid var(--edge);"
+              >
+                🌱 ${this.t("Group I: Classes 6–8", "ग्रुप I (कक्षा 6–8)")}
+              </button>
 
-              <div class="counselor-ai-insight-box" style="margin-top:20px;padding:14px;background:rgba(13,148,136,0.06);border:1.5px dashed rgba(13,148,136,0.3);border-radius:12px;">
-                <div style="display:flex;gap:8px;align-items:center;font-weight:700;color:var(--counselor-teal);font-size:0.88rem;margin-bottom:4px;">
-                  <span>💡</span> ${this.t("Institutional Counselor Recommendation:", "परामर्शदाता विश्लेषण अनुशंसा:")}
-                </div>
-                <div style="font-size:0.82rem;line-height:1.5;color:var(--ink);">
-                  ${this.t(
-                    "The cohort shows peak strength in <strong>Investigative (78%)</strong> and <strong>Social (71%)</strong> dimensions. Recommended focus: Facilitate hands-on science research workshops, STEM innovation challenges, and peer-to-peer mentorship clubs before Class 10 stream finalization.",
-                    "समूह में <strong>खोजी (78%)</strong> एवं <strong>सामाजिक (71%)</strong> आयामों में उच्च रुचि पाई गई है। अनुशंसा: कक्षा 10 स्ट्रीम चयन से पूर्व विद्यार्थियों हेतु साइंस रिसर्च वर्कशॉप एवं STEM करियर सेमिनार आयोजित किए जाएँ।"
-                  )}
-                </div>
-              </div>
+              <button 
+                type="button" 
+                class="pill-btn ${cohortFilter === "group_2" ? "active" : ""}" 
+                data-admin-cohort-filter="group_2"
+                style="${cohortFilter === "group_2" ? "background:var(--teal);color:#fff;font-weight:800;" : "background:var(--field);color:var(--ink);font-weight:600;"}padding:8px 16px;font-size:0.84rem;border-radius:10px;cursor:pointer;border:1px solid var(--edge);"
+              >
+                🧭 ${this.t("Group II: Classes 9–10", "ग्रुप II (कक्षा 9–10)")}
+              </button>
+
+              <button 
+                type="button" 
+                class="pill-btn ${cohortFilter === "group_3" ? "active" : ""}" 
+                data-admin-cohort-filter="group_3"
+                style="${cohortFilter === "group_3" ? "background:#0284c7;color:#fff;font-weight:800;" : "background:var(--field);color:var(--ink);font-weight:600;"}padding:8px 16px;font-size:0.84rem;border-radius:10px;cursor:pointer;border:1px solid var(--edge);"
+              >
+                🎓 ${this.t("Group III: Classes 11–12", "ग्रुप III (कक्षा 11–12)")}
+              </button>
             </div>
 
-            <!-- Grade & Stream Distribution Sidebar -->
-            <div style="display:flex;flex-direction:column;gap:20px;">
-              <div class="counselor-card">
-                <h3 class="c-card-title">📈 ${this.t("Grade Level Breakdown", "कक्षा वार विवरण")}</h3>
-                <div style="margin-top:14px;display:flex;flex-direction:column;gap:10px;">
-                  <div style="display:flex;justify-content:space-between;font-size:0.84rem;padding:8px 12px;background:var(--paper-2);border-radius:8px;">
-                    <span>🎓 <strong>Class 10 (Stream Choice)</strong></span>
-                    <span style="font-weight:700;color:var(--counselor-teal);">24 Students (58.5%)</span>
-                  </div>
-                  <div style="display:flex;justify-content:space-between;font-size:0.84rem;padding:8px 12px;background:var(--paper-2);border-radius:8px;">
-                    <span>🌱 <strong>Class 9 (Early Discovery)</strong></span>
-                    <span style="font-weight:700;color:#2563eb;">8 Students (19.5%)</span>
-                  </div>
-                  <div style="display:flex;justify-content:space-between;font-size:0.84rem;padding:8px 12px;background:var(--paper-2);border-radius:8px;">
-                    <span>🚀 <strong>Class 11 & 12 (College Track)</strong></span>
-                    <span style="font-weight:700;color:#f59e0b;">9 Students (22.0%)</span>
-                  </div>
-                </div>
-              </div>
+            <!-- School & Search Filters -->
+            <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+              <select 
+                id="admin-school-filter"
+                style="padding:8px 12px;border-radius:10px;border:1.5px solid var(--edge);background:var(--field);color:var(--ink);font-size:0.84rem;font-weight:600;"
+              >
+                <option value="all" ${schoolFilter === "all" ? "selected" : ""}>🏫 ${this.t("All Partner Schools", "सभी विद्यालय")}</option>
+                ${(stats.schools || ["Kendriya Vidyalaya No. 1", "Delhi Public School", "St. Xavier's Senior Secondary School", "Army Public School"]).map(sc => `
+                  <option value="${this.escape(sc)}" ${schoolFilter === sc ? "selected" : ""}>${this.escape(sc)}</option>
+                `).join("")}
+              </select>
 
-              <div class="counselor-card">
-                <h3 class="c-card-title">🎯 ${this.t("Recommended Stream Breakdown", "अनुशंसित स्ट्रीम अनुपात")}</h3>
-                <div style="margin-top:14px;display:flex;flex-direction:column;gap:10px;">
-                  <div style="display:flex;justify-content:space-between;font-size:0.84rem;padding:8px 12px;background:var(--paper-2);border-radius:8px;">
-                    <span>🔬 <strong>Science (PCM / Tech)</strong></span>
-                    <span style="font-weight:700;color:#2563eb;">42%</span>
-                  </div>
-                  <div style="display:flex;justify-content:space-between;font-size:0.84rem;padding:8px 12px;background:var(--paper-2);border-radius:8px;">
-                    <span>🧬 <strong>Science (PCB / BioMed)</strong></span>
-                    <span style="font-weight:700;color:#0d9488;">24%</span>
-                  </div>
-                  <div style="display:flex;justify-content:space-between;font-size:0.84rem;padding:8px 12px;background:var(--paper-2);border-radius:8px;">
-                    <span>📊 <strong>Commerce (with Maths)</strong></span>
-                    <span style="font-weight:700;color:#f59e0b;">18%</span>
-                  </div>
-                  <div style="display:flex;justify-content:space-between;font-size:0.84rem;padding:8px 12px;background:var(--paper-2);border-radius:8px;">
-                    <span>🎨 <strong>Humanities & Design</strong></span>
-                    <span style="font-weight:700;color:#ec4899;">16%</span>
-                  </div>
-                </div>
-              </div>
+              <input 
+                type="text" 
+                id="admin-search-input" 
+                placeholder="${this.t("🔍 Search student, school, email...", "🔍 छात्र, स्कूल, ईमेल खोजें...")}" 
+                value="${this.escape(q)}"
+                style="padding:8px 14px;border-radius:10px;border:1.5px solid var(--edge);background:var(--field);color:var(--ink);font-size:0.84rem;min-width:220px;"
+              />
             </div>
 
           </div>
-        ` : ""}
+        </div>
 
-        <!-- SUBTAB 2 & ROSTER TABLE -->
-        ${subTab === "roster" || subTab === "dashboard" ? `
-          <div class="counselor-table-card" style="margin-top:24px;">
-            <div class="c-table-toolbar" style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px;">
-              <div>
-                <h3 class="c-card-title">👥 ${this.t("Student Roster & Psychometric Diagnostics", "विद्यार्थी सूची एवं साइकोमेट्रिक डायग्नोस्टिक्स")}</h3>
-                <p class="c-card-desc">${this.t("Click on any student to view comprehensive 6-factor radar scores, Tamanna aptitude, and record counselor notes.", "किसी भी विद्यार्थी पर क्लिक करके उसका पूरा 6-फ़ैक्टर स्कोर, तमन्ना योग्यता एवं केस नोट देखें।")}</p>
-              </div>
-
-              <!-- Filter Controls -->
-              <div class="counselor-toolbar-controls">
-                <input 
-                  type="text" 
-                  id="counselor-search-input" 
-                  class="counselor-search-input"
-                  placeholder="${this.t("🔍 Search student name, career, school...", "🔍 विद्यार्थी, करियर या स्कूल खोजें...")}" 
-                  value="${this.escape(this.state.counselorSearch || "")}"
-                  oninput="App.state.counselorSearch = this.value; App.render();"
-                />
-
-                <select 
-                  id="counselor-grade-filter"
-                  class="counselor-select"
-                  onchange="App.state.counselorGradeFilter = this.value; App.render();"
-                >
-                  <option value="all" ${gFilter === "all" ? "selected" : ""}>All Classes (6-12)</option>
-                  <option value="9" ${gFilter === "9" ? "selected" : ""}>Class 9th</option>
-                  <option value="10" ${gFilter === "10" ? "selected" : ""}>Class 10th (Stream Choice)</option>
-                  <option value="11" ${gFilter === "11" ? "selected" : ""}>Class 11th</option>
-                  <option value="12" ${gFilter === "12" ? "selected" : ""}>Class 12th</option>
-                </select>
-              </div>
+        <!-- STUDENT ROSTER & DIAGNOSTICS TABLE -->
+        <div class="card" style="margin:0;padding:22px;border-radius:18px;border:1.5px solid var(--edge);background:var(--card);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <div>
+              <h3 style="margin:0 0 4px;font-size:1.15rem;color:var(--ink);">
+                👥 ${this.t("Student Cohort Diagnostic Roster", "विद्यार्थी कोहॉर्ट डायग्नोस्टिक सूची")}
+              </h3>
+              <p class="muted" style="margin:0;font-size:0.84rem;">
+                ${this.t("Showing evaluated students filtered by Cohort Stage and Institution.", "कोहॉर्ट चरण एवं विद्यालय के अनुसार चयनित विद्यार्थी।")}
+              </p>
             </div>
+            <span class="rich-badge" style="background:var(--field);font-size:0.8rem;color:var(--ink-soft);">
+              ${filteredStudents.length} ${this.t("Students Listed", "विद्यार्थी")}
+            </span>
+          </div>
 
-            <!-- TABLE -->
-            <div class="c-table-wrapper" style="overflow-x:auto;">
-              <table class="counselor-table" style="width:100%;border-collapse:collapse;font-size:0.84rem;">
-                <thead>
-                  <tr style="background:var(--paper-2);border-bottom:2px solid var(--edge);text-align:left;">
-                    <th style="padding:10px 12px;">Student Name</th>
-                    <th style="padding:10px 12px;">Class</th>
-                    <th style="padding:10px 12px;">Holland Code</th>
-                    <th style="padding:10px 12px;">Top Career Pathway</th>
-                    <th style="padding:10px 12px;">Recommended Stream</th>
-                    <th style="padding:10px 12px;">Parent Contact</th>
-                    <th style="padding:10px 12px;text-align:right;">Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${filteredStudents.length ? filteredStudents.map(s => `
-                    <tr style="border-bottom:1px solid var(--edge);transition:background 0.2s;" class="c-student-row">
-                      <td style="padding:12px;">
+          <div style="overflow-x:auto;">
+            <table class="counselor-table" style="width:100%;border-collapse:collapse;font-size:0.85rem;">
+              <thead>
+                <tr style="background:var(--field);border-bottom:2px solid var(--edge);text-align:left;">
+                  <th style="padding:12px 14px;">Student Name</th>
+                  <th style="padding:12px 14px;">Cohort Stage & Grade</th>
+                  <th style="padding:12px 14px;">School Institution</th>
+                  <th style="padding:12px 14px;">Completed Levels</th>
+                  <th style="padding:12px 14px;">Top Career Pathway</th>
+                  <th style="padding:12px 14px;text-align:right;">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${filteredStudents.length ? filteredStudents.map(s => {
+                  const gradeNum = parseInt(s.grade || "10", 10);
+                  const isG1 = (s.cohortGroup === "group_1" || gradeNum <= 8);
+                  const isG2 = (s.cohortGroup === "group_2" || [9, 10].includes(gradeNum));
+                  const isG3 = (s.cohortGroup === "group_3" || [11, 12].includes(gradeNum));
+
+                  const stageBadge = isG1 
+                    ? `<span style="background:rgba(224,159,62,0.15);color:var(--ink);font-weight:700;padding:3px 8px;border-radius:6px;font-size:0.75rem;">🌱 Group I · Class ${s.grade || "7"}</span>`
+                    : isG2
+                    ? `<span style="background:rgba(45,212,191,0.15);color:var(--teal);font-weight:700;padding:3px 8px;border-radius:6px;font-size:0.75rem;">🧭 Group II · Class ${s.grade || "10"}</span>`
+                    : `<span style="background:rgba(56,189,248,0.15);color:#0284c7;font-weight:700;padding:3px 8px;border-radius:6px;font-size:0.75rem;">🎓 Group III · Class ${s.grade || "12"}</span>`;
+
+                  const levels = s.completedLevels || ["Level 1: Interest"];
+                  const topMatch = (s.topCareerMatches && s.topCareerMatches[0]) ? s.topCareerMatches[0] : (s.top_career || "Software Architect / Tech Lead");
+
+                  return `
+                    <tr style="border-bottom:1px solid var(--edge);transition:background 0.15s ease;" class="admin-student-row">
+                      <td style="padding:12px 14px;">
                         <div style="display:flex;align-items:center;gap:10px;">
-                          <div class="c-student-avatar" style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#0d9488,#2563eb);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.8rem;">
+                          <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--teal),#2563eb);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.85rem;">
                             ${(s.name || "S").charAt(0)}
                           </div>
                           <div>
-                            <strong style="color:var(--ink);">${this.escape(s.name)}</strong>
-                            <div style="font-size:0.72rem;color:var(--ink-soft);">${this.escape(s.school || "Kendriya Vidyalaya")}</div>
+                            <strong style="color:var(--ink);font-size:0.9rem;">${this.escape(s.name)}</strong>
+                            <div style="font-size:0.75rem;color:var(--ink-soft);">${this.escape(s.email || "student@careermarg.org")}</div>
                           </div>
                         </div>
                       </td>
-                      <td style="padding:12px;">
-                        <span class="badge-grade">Class ${s.grade || "10"}</span>
+
+                      <td style="padding:12px 14px;">
+                        ${stageBadge}
                       </td>
-                      <td style="padding:12px;">
-                        <span class="badge-holland" style="font-family:monospace;font-weight:800;background:rgba(37,99,235,0.1);color:#2563eb;padding:3px 8px;border-radius:6px;font-size:0.78rem;">
-                          ${s.holland_code || "IES"}
-                        </span>
+
+                      <td style="padding:12px 14px;color:var(--ink-soft);font-size:0.82rem;">
+                        🏫 ${this.escape(s.school || "Kendriya Vidyalaya")}
                       </td>
-                      <td style="padding:12px;">
-                        <strong>${this.escape(s.top_career || "Software Architect")}</strong>
+
+                      <td style="padding:12px 14px;">
+                        <div style="display:flex;gap:4px;flex-wrap:wrap;">
+                          ${levels.map(lvl => `
+                            <span style="font-size:0.72rem;background:rgba(45,212,191,0.12);color:var(--teal);padding:2px 6px;border-radius:4px;font-weight:700;">
+                              ✓ ${lvl.replace("Level ", "L")}
+                            </span>
+                          `).join("")}
+                        </div>
                       </td>
-                      <td style="padding:12px;">
-                        <span class="badge-stream" style="background:rgba(13,148,136,0.1);color:var(--counselor-teal);padding:3px 8px;border-radius:6px;font-weight:700;font-size:0.78rem;">
-                          ${s.recommended_stream || "PCM (Science)"}
-                        </span>
+
+                      <td style="padding:12px 14px;">
+                        <strong style="font-size:0.84rem;color:var(--ink);">${this.escape(String(topMatch).replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase()))}</strong>
                       </td>
-                      <td style="padding:12px;">
-                        ${s.parent_contacted ? `
-                          <span style="color:#0d9488;font-weight:700;font-size:0.78rem;">✔ Contacted</span>
-                        ` : `
-                          <span style="color:#f59e0b;font-weight:600;font-size:0.78rem;">⏳ Pending</span>
-                        `}
-                      </td>
-                      <td style="padding:12px;text-align:right;">
+
+                      <td style="padding:12px 14px;text-align:right;">
                         <button 
                           type="button" 
-                          class="btn-view-diag" 
+                          class="btn btn-sm btn-outline" 
                           data-open-counselor-student="${s.id}"
-                          style="background:var(--counselor-teal);color:#fff;border:none;border-radius:6px;padding:6px 12px;font-size:0.76rem;font-weight:700;cursor:pointer;"
+                          style="font-size:0.76rem;padding:6px 12px;font-weight:700;border-color:var(--teal);color:var(--teal);"
                         >
-                          🔍 View Diagnostics →
+                          🔍 ${this.t("View Diagnostics", "डायग्नोस्टिक्स देखें")} →
                         </button>
                       </td>
                     </tr>
-                  `).join("") : `
-                    <tr>
-                      <td colspan="7" style="text-align:center;padding:30px;color:var(--ink-soft);">
-                        No students found matching current filter.
-                      </td>
-                    </tr>
-                  `}
-                </tbody>
-              </table>
-            </div>
+                  `;
+                }).join("") : `
+                  <tr>
+                    <td colspan="6" style="text-align:center;padding:40px;color:var(--ink-soft);">
+                      <span style="font-size:2rem;display:block;margin-bottom:8px;">🔍</span>
+                      ${this.t("No student records found matching the current filter criteria.", "चयनित फिल्टर के अनुसार कोई छात्र नहीं मिला।")}
+                    </td>
+                  </tr>
+                `}
+              </tbody>
+            </table>
           </div>
-        ` : ""}
-
-        <!-- SUBTAB 3: COUNSELING SESSIONS -->
-        ${subTab === "sessions" ? `
-          <div class="counselor-card" style="margin-top:24px;">
-            <div class="c-card-header">
-              <div>
-                <h3 class="c-card-title">📅 ${this.t("Upcoming 1:1 Counseling Appointments & Queue", "आगामी 1:1 परामर्श सत्र एवं समय सारणी")}</h3>
-                <p class="c-card-desc">${this.t("Track booked guidance sessions, follow-up dates, and parent advisory status.", "निर्धारित मार्गदर्शन सत्र, आगामी तारीखें एवं अभिभावक संवाद की स्थिति।")}</p>
-              </div>
-            </div>
-
-            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:14px;margin-top:16px;">
-              ${allStudents.slice(0, 6).map((s, idx) => `
-                <div style="background:var(--paper-2);border:1.5px solid var(--edge);border-radius:12px;padding:14px;">
-                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                    <strong style="font-size:0.92rem;color:var(--ink);">${s.name}</strong>
-                    <span class="badge-grade">Class ${s.grade}</span>
-                  </div>
-                  <div style="font-size:0.78rem;color:var(--ink-soft);margin-bottom:6px;">
-                    🎯 Target: <strong>${s.top_career || "Engineering"}</strong>
-                  </div>
-                  <div style="font-size:0.78rem;color:var(--ink-soft);margin-bottom:10px;">
-                    📅 Next Date: <strong>${s.next_session_date || "Tomorrow, 10:30 AM"}</strong>
-                  </div>
-                  <button 
-                    type="button" 
-                    class="btn-sm btn-outline-primary btn-block" 
-                    data-open-counselor-student="${s.id}"
-                    style="width:100%;font-size:0.75rem;padding:6px;"
-                  >
-                    📝 Open Case Notes & Profile
-                  </button>
-                </div>
-              `).join("")}
-            </div>
-          </div>
-        ` : ""}
-
-        <!-- SUBTAB 4: STREAM ADVISORY MATRIX -->
-        ${subTab === "streams" ? `
-          <div class="counselor-card" style="margin-top:24px;">
-            <div class="c-card-header">
-              <div>
-                <h3 class="c-card-title">🎯 ${this.t("Class 10th Stream Allocation Decision Matrix", "कक्षा 10वीं स्ट्रीम आवंटन निर्णय मेट्रिक्स")}</h3>
-                <p class="c-card-desc">${this.t("Evidence-backed psychometric mapping between Student Aptitude, Holland Code & Recommended Class 11 Stream.", "विद्यार्थी की योग्यता, हॉलैंड कोड एवं कक्षा 11वीं स्ट्रीम के बीच साक्ष्य-आधारित मैपिंग।")}</p>
-              </div>
-            </div>
-
-            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(260px, 1fr));gap:16px;margin-top:18px;">
-              <div style="background:rgba(37,99,235,0.05);border:1.5px solid rgba(37,99,235,0.25);border-radius:12px;padding:16px;">
-                <div style="font-size:1.5rem;margin-bottom:6px;">🔬</div>
-                <h4 style="color:#2563eb;margin:0 0 6px 0;">Science (PCM / Tech)</h4>
-                <div style="font-size:0.78rem;color:var(--ink-soft);margin-bottom:10px;">For High Numerical & Logical Aptitude (RIASEC: I, R, C)</div>
-                <div style="font-size:0.76rem;line-height:1.45;color:var(--ink);">Ideal for Engineering, Architecture, Data Science, Defense Aviation, Cybersecurity.</div>
-              </div>
-
-              <div style="background:rgba(13,148,136,0.05);border:1.5px solid rgba(13,148,136,0.25);border-radius:12px;padding:16px;">
-                <div style="font-size:1.5rem;margin-bottom:6px;">🧬</div>
-                <h4 style="color:var(--counselor-teal);margin:0 0 6px 0;">Science (PCB / BioMed)</h4>
-                <div style="font-size:0.78rem;color:var(--ink-soft);margin-bottom:10px;">For High Science Aptitude + Empathy (RIASEC: I, S, A)</div>
-                <div style="font-size:0.76rem;line-height:1.45;color:var(--ink);">Ideal for Medicine, Biotechnology, Clinical Psychology, Pharmacy, Nursing.</div>
-              </div>
-
-              <div style="background:rgba(217,119,6,0.05);border:1.5px solid rgba(217,119,6,0.25);border-radius:12px;padding:16px;">
-                <div style="font-size:1.5rem;margin-bottom:6px;">📊</div>
-                <h4 style="color:#d97706;margin:0 0 6px 0;">Commerce (with Maths)</h4>
-                <div style="font-size:0.78rem;color:var(--ink-soft);margin-bottom:10px;">For Numerical & Enterprising Focus (RIASEC: E, C, S)</div>
-                <div style="font-size:0.76rem;line-height:1.45;color:var(--ink);">Ideal for CA/CS, Investment Banking, Fintech, Economics, Business Analytics.</div>
-              </div>
-
-              <div style="background:rgba(236,72,153,0.05);border:1.5px solid rgba(236,72,153,0.25);border-radius:12px;padding:16px;">
-                <div style="font-size:1.5rem;margin-bottom:6px;">🎨</div>
-                <h4 style="color:#ec4899;margin:0 0 6px 0;">Humanities & Design</h4>
-                <div style="font-size:0.78rem;color:var(--ink-soft);margin-bottom:10px;">For Verbal, Artistic & Social Strengths (RIASEC: A, S, E)</div>
-                <div style="font-size:0.76rem;line-height:1.45;color:var(--ink);">Ideal for Civil Services (UPSC), Law, UI/UX Design, Journalism, Psychology.</div>
-              </div>
-            </div>
-          </div>
-        ` : ""}
+        </div>
 
       </div>
     `;
@@ -7070,25 +6860,29 @@ const App = {
     const isHi = this.state.lang === "hi";
     const detail = this.state.counselorStudentDetail;
     const isLoading = this.state.counselorModalLoading;
-    const student = detail?.student || { name: "Student", grade: "10", school: "School" };
+    const student = detail?.student || { name: "Student", grade: "10", school: "Kendriya Vidyalaya" };
     const scores = detail?.scores || { R: 65, I: 82, A: 55, S: 70, E: 75, C: 60 };
-    const record = detail?.record || {};
     const matches = detail?.matches || [];
+
+    const gradeNum = parseInt(student.grade || "10", 10);
+    const isG1 = gradeNum <= 8;
+    const isG2 = [9, 10].includes(gradeNum);
+    const isG3 = [11, 12].includes(gradeNum);
 
     return `
       <div class="counselor-modal-backdrop" id="counselor-modal-backdrop" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.65);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(4px);">
-        <div class="counselor-modal-card" style="background:var(--paper-1);border-radius:16px;width:100%;max-width:960px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 48px rgba(0,0,0,0.3);border:1.5px solid var(--edge);display:flex;flex-direction:column;">
+        <div class="counselor-modal-card" style="background:var(--card);border-radius:18px;width:100%;max-width:900px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 48px rgba(0,0,0,0.3);border:1.5px solid var(--edge);display:flex;flex-direction:column;">
           
           <!-- MODAL HEADER -->
-          <div style="padding:18px 24px;border-bottom:1.5px solid var(--edge);display:flex;justify-content:space-between;align-items:center;background:var(--paper-2);">
+          <div style="padding:18px 24px;border-bottom:1.5px solid var(--edge);display:flex;justify-content:space-between;align-items:center;background:var(--field);">
             <div style="display:flex;align-items:center;gap:12px;">
-              <div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#0d9488,#2563eb);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.1rem;">
+              <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--teal),#2563eb);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.15rem;">
                 ${(student.name || "S").charAt(0)}
               </div>
               <div>
-                <h2 style="margin:0;font-size:1.15rem;color:var(--ink);">${this.escape(student.name)}</h2>
-                <div style="font-size:0.78rem;color:var(--ink-soft);">
-                  Class ${student.grade || "10"} · ${this.escape(student.school || "Kendriya Vidyalaya")} · ID: ${this.escape(student.id || "")}
+                <h2 style="margin:0;font-size:1.2rem;color:var(--ink);">${this.escape(student.name)}</h2>
+                <div style="font-size:0.8rem;color:var(--ink-soft);margin-top:2px;">
+                  ${isG1 ? "🌱 Group I (Classes 6–8)" : isG2 ? "🧭 Group II (Classes 9–10)" : "🎓 Group III (Classes 11–12)"} · Class ${student.grade || "10"} · 🏫 ${this.escape(student.school || "Kendriya Vidyalaya")}
                 </div>
               </div>
             </div>
@@ -7096,105 +6890,87 @@ const App = {
           </div>
 
           <!-- MODAL BODY -->
-          <div class="counselor-modal-body-grid">
+          <div style="padding:24px;display:grid;grid-template-columns:1.2fr 1fr;gap:24px;">
             
-            <!-- LEFT: PSYCHOMETRIC REPORT -->
+            <!-- LEFT: RIASEC SCORES & APTITUDE -->
             <div>
-              <h3 style="margin:0 0 12px 0;font-size:0.95rem;color:var(--ink);">🔬 Psychometric Trait Scores (RIASEC & Aptitude)</h3>
+              <h3 style="margin:0 0 12px 0;font-size:1rem;color:var(--ink);">🔬 Level 1: Holland RIASEC Trait Radar</h3>
               
-              <div style="background:var(--paper-2);border-radius:12px;padding:14px;border:1.5px solid var(--edge);margin-bottom:16px;">
-                <div style="font-size:0.82rem;font-weight:700;color:var(--ink);margin-bottom:10px;">Holland RIASEC 6-Dimension Profile</div>
+              <div style="background:var(--field);border-radius:14px;padding:16px;border:1.5px solid var(--edge);margin-bottom:18px;">
                 ${[
-                  { label: "Investigative (I)", score: scores.I || 82, color: "#2563eb" },
-                  { label: "Enterprising (E)", score: scores.E || 75, color: "#f59e0b" },
-                  { label: "Social (S)", score: scores.S || 70, color: "#0d9488" },
-                  { label: "Realistic (R)", score: scores.R || 65, color: "#dc2626" },
-                  { label: "Conventional (C)", score: scores.C || 60, color: "#7c3aed" },
-                  { label: "Artistic (A)", score: scores.A || 55, color: "#ec4899" },
+                  { label: "Investigative (I) - खोजी", score: scores.I || 82, color: "#2563eb" },
+                  { label: "Enterprising (E) - उद्यमी", score: scores.E || 75, color: "#f59e0b" },
+                  { label: "Social (S) - सामाजिक", score: scores.S || 70, color: "#0d9488" },
+                  { label: "Realistic (R) - व्यावहारिक", score: scores.R || 65, color: "#dc2626" },
+                  { label: "Conventional (C) - संगठित", score: scores.C || 60, color: "#7c3aed" },
+                  { label: "Artistic (A) - कलात्मक", score: scores.A || 55, color: "#ec4899" },
                 ].map(item => `
-                  <div style="margin-bottom:8px;">
-                    <div style="display:flex;justify-content:space-between;font-size:0.75rem;margin-bottom:2px;">
-                      <span>${item.label}</span>
-                      <strong>${item.score}%</strong>
+                  <div style="margin-bottom:10px;">
+                    <div style="display:flex;justify-content:space-between;font-size:0.78rem;margin-bottom:3px;">
+                      <span style="font-weight:600;color:var(--ink);">${item.label}</span>
+                      <strong style="color:var(--ink);">${item.score}%</strong>
                     </div>
-                    <div style="height:6px;background:var(--paper-3);border-radius:6px;overflow:hidden;">
+                    <div style="height:6px;background:var(--card);border-radius:6px;overflow:hidden;">
                       <div style="width:${item.score}%;height:100%;background:${item.color};"></div>
                     </div>
                   </div>
                 `).join("")}
               </div>
 
-              <!-- Top Matched Pathways -->
-              <h3 style="margin:0 0 10px 0;font-size:0.95rem;color:var(--ink);">🎯 Top Matched Career Pathways</h3>
-              <div style="display:flex;flex-direction:column;gap:8px;">
+              ${!isG1 ? `
+                <h3 style="margin:0 0 12px 0;font-size:1rem;color:var(--ink);">🧠 Level 2: NCERT TAMANNA Aptitudes</h3>
+                <div style="background:var(--field);border-radius:14px;padding:14px;border:1.5px solid var(--edge);display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                  <div style="font-size:0.8rem;">📐 Spatial 3D: <strong>88%</strong></div>
+                  <div style="font-size:0.8rem;">🔢 Numerical: <strong>85%</strong></div>
+                  <div style="font-size:0.8rem;">⚙️ Mechanical: <strong>82%</strong></div>
+                  <div style="font-size:0.8rem;">🧩 Logical AR: <strong>84%</strong></div>
+                </div>
+              ` : `
+                <div style="background:var(--field);border-radius:14px;padding:14px;border:1.5px dashed var(--marigold);font-size:0.82rem;color:var(--ink-soft);">
+                  🌱 <strong>Discovery Stage:</strong> Cognitive aptitude battery starts in Class 9 as per National Assessment Framework.
+                </div>
+              `}
+            </div>
+
+            <!-- RIGHT: TOP 3 CAREER PATHWAYS -->
+            <div>
+              <h3 style="margin:0 0 12px 0;font-size:1rem;color:var(--ink);">🎯 Top 3 Recommended Pathways</h3>
+              
+              <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px;">
                 ${(matches.length ? matches.slice(0, 3) : [
-                  { title: "Software Architect / AI Specialist", fit: 94, stream: "PCM (Science)" },
-                  { title: "Data Scientist & Analytics Lead", fit: 89, stream: "PCM / Statistics" },
-                  { title: "Robotics & Embedded Systems Engineer", fit: 86, stream: "PCM (Science)" },
-                ]).map(m => `
-                  <div style="padding:10px 12px;background:var(--paper-2);border:1px solid var(--edge);border-radius:8px;display:flex;justify-content:space-between;align-items:center;">
+                  { title: "Robotics & Automation Engineer", fit: 94 },
+                  { title: "Aerospace & Defense Systems", fit: 89 },
+                  { title: "Data Scientist & AI Lead", fit: 86 }
+                ]).map((m, idx) => `
+                  <div style="padding:12px 14px;background:var(--field);border:1px solid var(--edge);border-radius:12px;display:flex;justify-content:space-between;align-items:center;">
                     <div>
-                      <strong style="font-size:0.82rem;color:var(--ink);">${m.title}</strong>
-                      <div style="font-size:0.72rem;color:var(--ink-soft);">${m.stream || "Science Stream"}</div>
+                      <div style="font-size:0.72rem;color:var(--teal);font-weight:800;">№ ${idx + 1} Best Fit Pathway</div>
+                      <strong style="font-size:0.88rem;color:var(--ink);">${this.escape(m.title)}</strong>
                     </div>
-                    <span style="background:rgba(13,148,136,0.12);color:var(--counselor-teal);font-weight:800;padding:3px 8px;border-radius:6px;font-size:0.76rem;">
+                    <span style="background:rgba(45,212,191,0.15);color:var(--teal);font-weight:800;padding:4px 8px;border-radius:6px;font-size:0.82rem;">
                       ${m.fit || 90}% Match
                     </span>
                   </div>
                 `).join("")}
               </div>
-            </div>
 
-            <!-- RIGHT: COUNSELOR NOTES & ACTION PLAN -->
-            <div style="background:var(--paper-2);border-radius:12px;padding:16px;border:1.5px solid var(--edge);display:flex;flex-direction:column;gap:12px;">
-              <h3 style="margin:0;font-size:0.95rem;color:var(--counselor-teal);">📝 Counselor Case Notes & Stream Advisory</h3>
-              
-              <div>
-                <label style="display:block;font-size:0.78rem;font-weight:700;color:var(--ink);margin-bottom:4px;">Recommended Stream for Class 11</label>
-                <select id="counselor-modal-rec-stream" style="width:100%;padding:8px;border-radius:6px;border:1.5px solid var(--edge);font-size:0.82rem;font-weight:600;background:var(--paper-1);color:var(--ink);">
-                  <option value="PCM (Science & Tech)" ${record.recommended_stream?.includes("PCM") ? "selected" : ""}>Science (PCM: Physics, Chemistry, Math)</option>
-                  <option value="PCB (Medical & BioMed)" ${record.recommended_stream?.includes("PCB") ? "selected" : ""}>Science (PCB: Physics, Chemistry, Biology)</option>
-                  <option value="Commerce (with Maths)" ${record.recommended_stream?.includes("Commerce") ? "selected" : ""}>Commerce (with Mathematics / Applied Math)</option>
-                  <option value="Humanities & Design" ${record.recommended_stream?.includes("Humanities") ? "selected" : ""}>Arts & Humanities / Liberal Studies</option>
-                  <option value="Vocational / Applied Skills" ${record.recommended_stream?.includes("Vocational") ? "selected" : ""}>Vocational & Applied Technology</option>
-                </select>
-              </div>
-
-              <div>
-                <label style="display:block;font-size:0.78rem;font-weight:700;color:var(--ink);margin-bottom:4px;">Clinical & Advisory Notes</label>
-                <textarea 
-                  id="counselor-modal-notes" 
-                  rows="4" 
-                  placeholder="${this.t("Add student behavioral observation, parent readiness, aptitude alignment notes...", "विद्यार्थी की रुचि, अभिभावक से चर्चा एवं अवलोकन यहाँ दर्ज करें...")}"
-                  style="width:100%;padding:8px;border-radius:6px;border:1.5px solid var(--edge);font-size:0.8rem;background:var(--paper-1);color:var(--ink);line-height:1.45;"
-                >${this.escape(record.notes || "")}</textarea>
-              </div>
-
-              <div>
-                <label style="display:block;font-size:0.78rem;font-weight:700;color:var(--ink);margin-bottom:4px;">Schedule Next 1:1 Session</label>
-                <input 
-                  type="datetime-local" 
-                  id="counselor-modal-next-session" 
-                  value="${this.escape((record.next_session_date || "").replace(" ", "T"))}" 
-                  style="width:100%;padding:8px;border-radius:6px;border:1.5px solid var(--edge);font-size:0.8rem;background:var(--paper-1);color:var(--ink);"
-                />
-              </div>
-
-              <label style="display:flex;align-items:center;gap:8px;font-size:0.78rem;color:var(--ink);cursor:pointer;">
-                <input type="checkbox" id="counselor-modal-parent-contacted" ${record.parent_contacted ? "checked" : ""} />
-                <span>Parents Consulted & Stream Alignment Confirmed</span>
-              </label>
-
-              <div style="display:flex;gap:8px;margin-top:auto;">
+              <div style="padding:16px;background:var(--field);border-radius:14px;border:1.5px solid var(--edge);">
+                <div style="font-size:0.82rem;font-weight:800;color:var(--ink);margin-bottom:4px;">
+                  📋 Full Diagnostic Assessment
+                </div>
+                <p class="muted" style="font-size:0.8rem;margin:0 0 12px;line-height:1.45;">
+                  Access complete psychometric vectors, TAMANNA cognitive breakdowns, and official report.
+                </p>
                 <button 
                   type="button" 
-                  id="counselor-save-note-btn" 
-                  data-student-id="${student.id}"
-                  style="flex:1;background:var(--counselor-teal);color:#fff;border:none;border-radius:8px;padding:10px;font-size:0.82rem;font-weight:700;cursor:pointer;"
+                  class="btn btn-primary btn-block" 
+                  onclick="App.closeCounselorStudentModal(); App.go('report');"
+                  style="width:100%;font-size:0.86rem;padding:10px;"
                 >
-                  💾 Save Case Note & Action Plan
+                  📊 Open Official Report →
                 </button>
               </div>
+
             </div>
 
           </div>
@@ -7317,7 +7093,22 @@ const App = {
       btn.onclick = () => window.print();
     });
     document.querySelectorAll("[data-start]").forEach((btn) => {
-      btn.onclick = () => this.go(this.profileReady() ? "home" : "onboarding");
+      btn.onclick = () => {
+        if (this.state.auth) {
+          this.go(this.profileReady() ? "home" : "onboarding");
+        } else {
+          this.openAuthModal("signin");
+        }
+      };
+    });
+    document.querySelectorAll("[data-browse-careers]").forEach((btn) => {
+      btn.onclick = () => {
+        if (this.state.auth) {
+          this.go("explore");
+        } else {
+          this.openAuthModal("signin");
+        }
+      };
     });
     document.querySelectorAll("[data-continue]").forEach((btn) => {
       btn.onclick = () => this.go("home");
@@ -8115,13 +7906,35 @@ const App = {
   },
 
   bindCounselor() {
-    document.querySelectorAll("[data-counselor-subtab]").forEach((btn) => {
+    // Cohort stage filter pills
+    document.querySelectorAll("[data-admin-cohort-filter]").forEach((btn) => {
       btn.onclick = (e) => {
         if (e) { e.preventDefault(); e.stopPropagation(); }
-        this.state.counselorSubTab = btn.getAttribute("data-counselor-subtab");
-        this.render();
+        this.state.adminCohortFilter = btn.getAttribute("data-admin-cohort-filter") || "all";
+        this.loadCounselorDashboard();
       };
     });
+
+    // School selector
+    const schoolSel = document.getElementById("admin-school-filter");
+    if (schoolSel) {
+      schoolSel.onchange = (e) => {
+        this.state.adminSchoolFilter = e.target.value;
+        this.loadCounselorDashboard();
+      };
+    }
+
+    // Search input
+    const searchInp = document.getElementById("admin-search-input");
+    if (searchInp) {
+      searchInp.oninput = (e) => {
+        this.state.adminSearch = e.target.value;
+        clearTimeout(this._adminSearchTimer);
+        this._adminSearchTimer = setTimeout(() => {
+          this.loadCounselorDashboard();
+        }, 220);
+      };
+    }
 
     document.querySelectorAll("[data-export-cohort]").forEach((btn) => {
       btn.onclick = (e) => {
@@ -8133,9 +7946,9 @@ const App = {
     document.querySelectorAll("[data-counselor-refresh]").forEach((btn) => {
       btn.onclick = async (e) => {
         if (e) { e.preventDefault(); e.stopPropagation(); }
-        this.toast(this.t("🔄 Refreshing cohort data...", "🔄 डेटाबेस से रिफ्रेश हो रहा है..."));
+        this.toast(this.t("🔄 Refreshing cohort data from DB...", "🔄 डेटाबेस से रिफ्रेश हो रहा है..."));
         await this.loadCounselorDashboard();
-        this.toast(this.t("✅ Cohort data updated!", "✅ डेटाबेस अपडेट हो गया!"));
+        this.toast(this.t("✅ Cohort database synchronized!", "✅ डेटाबेस अपडेट हो गया!"));
       };
     });
 
@@ -8158,14 +7971,6 @@ const App = {
     if (backdrop) {
       backdrop.onclick = (e) => {
         if (e.target === backdrop) this.closeCounselorStudentModal();
-      };
-    }
-
-    const saveNoteBtn = document.getElementById("counselor-save-note-btn");
-    if (saveNoteBtn) {
-      saveNoteBtn.onclick = (e) => {
-        const studentId = saveNoteBtn.getAttribute("data-student-id");
-        this.saveCounselorNote(studentId, e);
       };
     }
   },

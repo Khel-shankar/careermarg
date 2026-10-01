@@ -1,0 +1,16 @@
+{
+  "name": "careermarg",
+  "version": "3.0.0",
+  "description": "CareerMarg — National Career Guidance & Psychological Assessment Platform",
+  "main": "index.html",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "mysql2": "^3.9.2",
+    "@supabase/supabase-js": "^2.45.4"
+  },
+  "engines": {
+    "node": ">=18.x"
+  }
+}
