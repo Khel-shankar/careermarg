@@ -762,7 +762,7 @@ const App = {
         }
       };
 
-      await fetch("api/sync.php", {
+      await fetch("api/sync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -819,7 +819,7 @@ const App = {
     }
 
     try {
-      const res = await fetch("api/auth.php?action=signin", {
+      const res = await fetch("api/auth?action=signin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email, password: pass })
@@ -939,7 +939,7 @@ const App = {
     }
 
     try {
-      const res = await fetch("api/auth.php?action=signup", {
+      const res = await fetch("api/auth?action=signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -1082,7 +1082,7 @@ const App = {
       sendBtn.textContent = this.t("Sending OTP...", "OTP भेजा जा रहा है...");
     }
     try {
-      const res = await fetch("api/auth.php?action=send_otp", {
+      const res = await fetch("api/auth?action=send_otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ identifier: val })
@@ -1323,7 +1323,7 @@ const App = {
 
   async handleDemoGroup2() {
     try {
-      const res = await fetch("api/auth.php?action=demo_group2", { method: "POST" });
+      const res = await fetch("api/auth?action=demo_group2", { method: "POST" });
       const data = await res.json();
       if (data && data.success) {
         this.state.auth = data.auth;
@@ -1352,7 +1352,7 @@ const App = {
 
   async handleDemoGroup3() {
     try {
-      const res = await fetch("api/auth.php?action=demo_group3", { method: "POST" });
+      const res = await fetch("api/auth?action=demo_group3", { method: "POST" });
       const data = await res.json();
       if (data && data.success) {
         this.state.auth = data.auth;
@@ -1381,7 +1381,7 @@ const App = {
 
   async handleDemoAdmin() {
     try {
-      const res = await fetch("api/auth.php?action=demo_admin", { method: "POST" });
+      const res = await fetch("api/auth?action=demo_admin", { method: "POST" });
       const data = await res.json();
       if (data && data.success) {
         this.state.auth = data.auth;
@@ -6470,7 +6470,7 @@ const App = {
       const search = this.state.adminSearch || this.state.counselorSearch || "";
       const cohort = this.state.adminCohortFilter || "all";
       const school = this.state.adminSchoolFilter || "all";
-      const rosterRes = await fetch(`api/counselor.php?action=students_roster&search=${encodeURIComponent(search)}&cohort=${encodeURIComponent(cohort)}&school=${encodeURIComponent(school)}`);
+      const rosterRes = await fetch(`api/counselor?action=students_roster&search=${encodeURIComponent(search)}&cohort=${encodeURIComponent(cohort)}&school=${encodeURIComponent(school)}`);
       const rosterData = await rosterRes.json();
       if (rosterData && rosterData.success && Array.isArray(rosterData.students)) {
         this.state.counselorStudents = rosterData.students;
@@ -6491,7 +6491,7 @@ const App = {
     this.render();
 
     try {
-      const res = await fetch(`api/counselor.php?action=student_detail&student_id=${encodeURIComponent(studentId)}`);
+      const res = await fetch(`api/counselor?action=student_detail&student_id=${encodeURIComponent(studentId)}`);
       const data = await res.json();
       if (data && data.success && data.student) {
         this.state.counselorStudentDetail = data;
