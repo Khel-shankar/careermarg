@@ -3520,8 +3520,8 @@ const App = {
             </div>
 
             <div style="text-align:center;margin-top:32px">
-              <button class="btn btn-secondary" type="button" data-browse-careers="1" style="max-width:320px;margin:0 auto">
-                ${this.t("Browse Full Career Directory (Search & Filters)", "पूरी करियर डायरेक्टरी देखें")} →
+              <button class="btn btn-secondary btn-landing-cta" type="button" data-browse-careers="1">
+                ${this.t("Explore 100+ Careers", "100+ करियर देखें")} →
               </button>
             </div>
           </div>
@@ -3647,11 +3647,11 @@ const App = {
                 "Join thousands of students making confident stream and career decisions today.",
                 "आज ही जुड़ें और 15 मिनट में अपने भविष्य का सही रास्ता जानें।"
               )}</p>
-              <div class="btn-group">
-                <button class="btn btn-primary" type="button" data-start="1" style="min-width:240px">
+              <div class="btn-group cta-btn-group">
+                <button class="btn btn-primary" type="button" data-start="1">
                   ${this.t("Start Free Assessment", "मुफ़्त टेस्ट शुरू करें")} →
                 </button>
-                <button class="btn btn-secondary" type="button" data-auth-open="signup" style="min-width:200px">
+                <button class="btn btn-secondary" type="button" data-auth-open="signup">
                   ${this.t("Create Free Account", "खाता बनाएँ")}
                 </button>
               </div>
@@ -3681,28 +3681,28 @@ const App = {
                 <h4>${this.t("Discovery Tools", "उपकरण")}</h4>
                 <ul class="footer-links">
                   <li><button type="button" data-start="1">${this.t("Start Assessment", "मूल्यांकन शुरू करें")}</button></li>
-                  <li><button type="button" data-go="explore">${this.t("Career Explorer", "करियर डायरेक्टरी")}</button></li>
-                  <li><button type="button" data-go="compare">${this.t("Compare Careers", "करियर तुलना")}</button></li>
-                  <li><button type="button" data-demo="1">${this.t("Load Demo Student", "डेमो प्रोफाइल")}</button></li>
+                  <li><button type="button" data-open-demo-switcher="1">⚡ ${this.t("Demo Personas", "डेमो रोल")}</button></li>
+                  <li><button type="button" data-go="counselor">🧑‍🏫 ${this.t("Admin & Counselor", "एडमिन व काउंसलर")}</button></li>
                 </ul>
               </div>
 
               <div class="footer-col">
                 <h4>${this.t("Frameworks", "ढाँचा")}</h4>
                 <ul class="footer-links">
-                  <li><a href="#features">${this.t("Holland RIASEC Code", "हॉलैंड RIASEC कोड")}</a></li>
-                  <li><a href="#how-it-works">${this.t("4-Domain Aptitude", "4 तर्क क्षेत्र")}</a></li>
-                  <li><a href="#why-us">${this.t("Stream Guide (10th/12th)", "स्ट्रीम गाइड")}</a></li>
-                  <li><a href="#faq">${this.t("FAQ & Help", "सहायता व प्रश्न")}</a></li>
+                  <li><a href="#features">${this.t("3-Stage Framework", "3-स्तरीय ढाँचा")}</a></li>
+                  <li><a href="#how-it-works">${this.t("Assessment Journey", "मूल्यांकन यात्रा")}</a></li>
+                  <li><a href="#features">${this.t("Holland RIASEC Guide", "हॉलैंड RIASEC कोड")}</a></li>
+                  <li><a href="#faq">${this.t("FAQs & Help", "सहायता व प्रश्न")}</a></li>
                 </ul>
               </div>
 
               <div class="footer-col">
-                <h4>${this.t("Account", "खाता")}</h4>
+                <h4>${this.t("Account & Access", "खाता व सेटिंग्स")}</h4>
                 <ul class="footer-links">
                   <li><button type="button" data-auth-open="signin">${this.t("Sign In", "साइन इन")}</button></li>
-                  <li><button type="button" data-auth-open="signup">${this.t("Sign Up", "साइन अप")}</button></li>
-                  <li><button type="button" data-lang="1">${this.t("Toggle Language (अ/A)", "भाषा बदलें")}</button></li>
+                  <li><button type="button" data-auth-open="signup">${this.t("Create Free Account", "खाता बनाएँ")}</button></li>
+                  <li><button type="button" data-lang="1">${this.t("Language (अ/A)", "भाषा बदलें")}</button></li>
+                  <li><button type="button" data-theme-toggle="1">${this.state.theme === "dark" ? "☀️ " + this.t("Light Mode", "लाइट मोड") : "🌙 " + this.t("Dark Mode", "डार्क मोड")}</button></li>
                 </ul>
               </div>
             </div>
