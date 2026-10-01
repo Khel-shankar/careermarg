@@ -6,7 +6,7 @@
 -- 3. student_trait_scores
 -- 4. counselor_notes
 -- 5. assessment_questions (126 Verified Bilingual Questions)
--- 6. career_sectors (14 Core Industry Sectors)
+-- 6. career_sectors (Industry Sectors)
 -- 7. careers (Curated Career Library)
 -- ============================================================================
 
@@ -77,7 +77,7 @@ CREATE TABLE IF NOT EXISTS assessment_questions (
 
 -- 6. CAREER SECTORS TABLE
 CREATE TABLE IF NOT EXISTS career_sectors (
-    id VARCHAR(64) PRIMARY KEY,
+    id VARCHAR(128) PRIMARY KEY,
     label VARCHAR(128) NOT NULL,
     hi VARCHAR(128) NOT NULL,
     icon VARCHAR(32) DEFAULT '🌐'
@@ -86,7 +86,7 @@ CREATE TABLE IF NOT EXISTS career_sectors (
 -- 7. CAREERS TABLE
 CREATE TABLE IF NOT EXISTS careers (
     id VARCHAR(64) PRIMARY KEY,
-    sector_id VARCHAR(64) REFERENCES career_sectors(id) ON DELETE SET NULL,
+    sector_id VARCHAR(128) DEFAULT 'it_tech',
     title VARCHAR(128) NOT NULL,
     title_hi VARCHAR(128) NOT NULL,
     riasec_code VARCHAR(16) DEFAULT 'IRC',
@@ -122,7 +122,7 @@ ON CONFLICT (id) DO UPDATE SET
     stream = EXCLUDED.stream,
     saved_careers = EXCLUDED.saved_careers;
 
--- SEED 14 CAREER SECTORS
+-- SEED CAREER SECTORS
 INSERT INTO career_sectors (id, label, hi, icon) VALUES
 ('all', 'All Sectors', 'सभी 900+ करियर', '🌐'),
 ('it_tech', 'IT, Software & AI', 'आईटी, सॉफ्टवेयर एवं एआई', '💻'),
@@ -137,7 +137,13 @@ INSERT INTO career_sectors (id, label, hi, icon) VALUES
 ('education', 'Education & Teaching', 'शिक्षा एवं प्रशिक्षण', '📚'),
 ('technical_skills', 'Skilled Trades & Vocational', 'तकनीकी कौशल एवं वोकेशनल', '🛠️'),
 ('public_policy', 'Public Policy & Law', 'लोक नीति एवं कानून', '⚖️'),
-('research', 'Pure Science & R&D', 'शुद्ध विज्ञान एवं अनुसंधान', '🔬')
+('research', 'Pure Science & R&D', 'शुद्ध विज्ञान एवं अनुसंधान', '🔬'),
+('IT, Software & AI', 'IT, Software & AI', 'आईटी, सॉफ्टवेयर एवं एआई', '💻'),
+('Engineering & Technology', 'Engineering & Technology', 'Engineering & Technology', '💼'),
+('Education & Teaching', 'Education & Teaching', 'शिक्षा एवं प्रशिक्षण', '📚'),
+('Agriculture & Food Sciences', 'Agriculture & Food Sciences', 'Agriculture & Food Sciences', '💼'),
+('Arts, Media & Design', 'Arts, Media & Design', 'कला, मीडिया एवं डिज़ाइन', '🎨'),
+('Business, Finance & Commerce', 'Business, Finance & Commerce', 'Business, Finance & Commerce', '💼')
 ON CONFLICT (id) DO UPDATE SET label = EXCLUDED.label, hi = EXCLUDED.hi, icon = EXCLUDED.icon;
 
 -- SEED 126 BILINGUAL ASSESSMENT QUESTIONS
@@ -578,6 +584,7 @@ INSERT INTO careers (id, sector_id, title, title_hi, riasec_code, stream, descri
 ('airline_ground_support_equipment_operator', 'Engineering & Technology', 'Airline Ground Support Equipment Operator', 'Airline Ground Support Equipment Operator', 'RCI', 'any', '', '', '₹4 - ₹15 LPA', 'High'),
 ('auctioneer', 'Engineering & Technology', 'Auctioneer', 'Auctioneer', 'RIA', 'any', '', '', '₹4 - ₹15 LPA', 'High')
 ON CONFLICT (id) DO UPDATE SET
+    sector_id = EXCLUDED.sector_id,
     title = EXCLUDED.title,
     title_hi = EXCLUDED.title_hi,
     riasec_code = EXCLUDED.riasec_code,

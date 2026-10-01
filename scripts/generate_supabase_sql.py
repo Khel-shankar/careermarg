@@ -1,14 +1,6 @@
 import json
-import re
-
-# Read assessmentData.js and careerDatabase.js
-with open('js/assessmentData.js', 'r', encoding='utf-8') as f:
-    assessment_code = f.read()
-
-with open('js/careerDatabase.js', 'r', encoding='utf-8') as f:
-    career_code = f.read()
-
 import subprocess
+
 res = subprocess.run(
     ["node", "-e", """
     global.window = global;
@@ -27,7 +19,7 @@ res = subprocess.run(
 
 data = json.loads(res.stdout)
 questions = data['questions']
-sectors = data['sectors']
+raw_sectors = data['sectors']
 careers = data['careers']
 
 def esc(val):
@@ -35,6 +27,18 @@ def esc(val):
         return 'NULL'
     s = str(val).replace("'", "''")
     return f"'{s}'"
+
+# Create mapping of sector titles to icon & hindi
+sector_map = {}
+for s in raw_sectors:
+    sector_map[s.get('label', '')] = s
+    sector_map[s.get('id', '')] = s
+
+# Collect all distinct sector names from careers
+all_career_sectors = set()
+for c in careers:
+    sec = c.get('sector') or c.get('cluster') or 'IT, Software & AI'
+    all_career_sectors.add(sec)
 
 sql_lines = [
 """-- ============================================================================
@@ -45,7 +49,7 @@ sql_lines = [
 -- 3. student_trait_scores
 -- 4. counselor_notes
 -- 5. assessment_questions (126 Verified Bilingual Questions)
--- 6. career_sectors (14 Core Industry Sectors)
+-- 6. career_sectors (Industry Sectors)
 -- 7. careers (Curated Career Library)
 -- ============================================================================
 
@@ -116,7 +120,7 @@ CREATE TABLE IF NOT EXISTS assessment_questions (
 
 -- 6. CAREER SECTORS TABLE
 CREATE TABLE IF NOT EXISTS career_sectors (
-    id VARCHAR(64) PRIMARY KEY,
+    id VARCHAR(128) PRIMARY KEY,
     label VARCHAR(128) NOT NULL,
     hi VARCHAR(128) NOT NULL,
     icon VARCHAR(32) DEFAULT '🌐'
@@ -125,7 +129,7 @@ CREATE TABLE IF NOT EXISTS career_sectors (
 -- 7. CAREERS TABLE
 CREATE TABLE IF NOT EXISTS careers (
     id VARCHAR(64) PRIMARY KEY,
-    sector_id VARCHAR(64) REFERENCES career_sectors(id) ON DELETE SET NULL,
+    sector_id VARCHAR(128) DEFAULT 'it_tech',
     title VARCHAR(128) NOT NULL,
     title_hi VARCHAR(128) NOT NULL,
     riasec_code VARCHAR(16) DEFAULT 'IRC',
@@ -165,14 +169,21 @@ ON CONFLICT (id) DO UPDATE SET
 
 # Sectors insert
 sec_rows = []
-for s in sectors:
+for s in raw_sectors:
     sid = s.get('id', 'all')
     label = s.get('label', sid)
     hi = s.get('hi', label)
     icon = s.get('icon', '💼')
     sec_rows.append(f"({esc(sid)}, {esc(label)}, {esc(hi)}, {esc(icon)})")
 
-sql_lines.append("-- SEED 14 CAREER SECTORS\nINSERT INTO career_sectors (id, label, hi, icon) VALUES\n" + ",\n".join(sec_rows) + "\nON CONFLICT (id) DO UPDATE SET label = EXCLUDED.label, hi = EXCLUDED.hi, icon = EXCLUDED.icon;\n")
+for sname in all_career_sectors:
+    if sname not in [s.get('id') for s in raw_sectors]:
+        matched = sector_map.get(sname, {})
+        hi = matched.get('hi', sname)
+        icon = matched.get('icon', '💼')
+        sec_rows.append(f"({esc(sname)}, {esc(sname)}, {esc(hi)}, {esc(icon)})")
+
+sql_lines.append("-- SEED CAREER SECTORS\nINSERT INTO career_sectors (id, label, hi, icon) VALUES\n" + ",\n".join(sec_rows) + "\nON CONFLICT (id) DO UPDATE SET label = EXCLUDED.label, hi = EXCLUDED.hi, icon = EXCLUDED.icon;\n")
 
 # Questions insert
 q_rows = []
@@ -201,7 +212,7 @@ sql_lines.append("-- SEED 126 BILINGUAL ASSESSMENT QUESTIONS\nINSERT INTO assess
 car_rows = []
 for c in careers:
     cid = c.get('id', '')
-    sector = c.get('sector', 'it_tech')
+    sector = c.get('sector') or c.get('cluster') or 'IT, Software & AI'
     title = c.get('title', '')
     title_hi = c.get('titleHi', title)
     riasec = c.get('riasec', 'IRC')
@@ -213,6 +224,7 @@ for c in careers:
     car_rows.append(f"({esc(cid)}, {esc(sector)}, {esc(title)}, {esc(title_hi)}, {esc(riasec)}, {esc(stream)}, {esc(desc)}, {esc(desc_hi)}, {esc(salary)}, {esc(growth)})")
 
 sql_lines.append("-- SEED 300 CURATED CAREERS\nINSERT INTO careers (id, sector_id, title, title_hi, riasec_code, stream, description, description_hi, salary_range, growth_outlook) VALUES\n" + ",\n".join(car_rows) + """\nON CONFLICT (id) DO UPDATE SET
+    sector_id = EXCLUDED.sector_id,
     title = EXCLUDED.title,
     title_hi = EXCLUDED.title_hi,
     riasec_code = EXCLUDED.riasec_code,
@@ -231,4 +243,4 @@ full_sql = "\n".join(sql_lines)
 with open('database/supabase_setup.sql', 'w', encoding='utf-8') as f:
     f.write(full_sql)
 
-print(f"Generated database/supabase_setup.sql ({len(full_sql)} bytes)")
+print(f"Successfully generated database/supabase_setup.sql ({len(full_sql)} bytes)")
