@@ -2516,8 +2516,6 @@ const App = {
     if (this.isCounselor()) {
       return [
         { id: "counselor", label: this.t("Counselor Suite", "परामर्शदाता कक्ष"), icon: ICON.counselor || "🧑‍🏫" },
-        { id: "explore", label: this.t("Career Hub", "करियर डायरेक्टरी"), icon: ICON.explore },
-        { id: "compare", label: this.t("Compare Matrix", "तुलना मेट्रिक्स"), icon: ICON.compare },
         { id: "home", label: this.t("Student Preview", "विद्यार्थी दृश्य"), icon: ICON.home },
       ];
     }
@@ -2525,8 +2523,6 @@ const App = {
       { id: "home", label: this.t("Home", "होम"), icon: ICON.home },
       { id: "assessments", label: this.t("Assessments", "मूल्यांकन"), icon: ICON.assessments },
       { id: "report", label: this.t("Report", "रिपोर्ट"), icon: ICON.report },
-      { id: "explore", label: this.t("Explore", "खोजें"), icon: ICON.explore },
-      { id: "compare", label: this.t("Compare", "तुलना"), icon: ICON.compare },
       { id: "profile", label: this.t("Profile", "प्रोफ़ाइल"), icon: ICON.profile },
     ];
   },
@@ -2535,8 +2531,6 @@ const App = {
     if (this.isCounselor()) {
       const cItems = [
         { id: "counselor", label: this.t("Counselor", "परामर्श"), icon: ICON.counselor || "🧑‍🏫" },
-        { id: "explore", label: this.t("Careers", "करियर"), icon: ICON.explore },
-        { id: "compare", label: this.t("Compare", "तुलना"), icon: ICON.compare },
         { id: "home", label: this.t("Student", "विद्यार्थी"), icon: ICON.home },
       ];
       return `
@@ -2556,7 +2550,6 @@ const App = {
       { id: "home", label: this.t("Home", "होम"), icon: ICON.home },
       { id: "assessments", label: this.t("Tests", "टेस्ट"), icon: ICON.assessments },
       { id: "report", label: this.t("Report", "रिपोर्ट"), icon: ICON.report },
-      { id: "explore", label: this.t("Explore", "खोजें"), icon: ICON.explore },
       { id: "profile", label: this.t("Profile", "प्रोफ़ाइल"), icon: ICON.profile },
     ];
     return `
@@ -2608,15 +2601,6 @@ const App = {
             </button>`
             )
             .join("")}
-          ${!isC ? `
-          <button type="button" class="side-saved-link" data-open-saved="1" style="background:rgba(201,67,42,0.08);border:1.5px solid rgba(201,67,42,0.3);color:var(--accent);font-weight:700;margin-top:10px;">
-            <span class="ico">⭐</span><span>${this.t("Saved Vault", "सेव करियर व रोडमैप")} (${this.getValidSavedCareers().length})</span>
-          </button>
-          ` : `
-          <button type="button" class="side-saved-link" data-counselor-refresh="1" style="background:rgba(13,148,136,0.08);border:1.5px solid rgba(13,148,136,0.3);color:var(--counselor-teal);font-weight:700;margin-top:10px;">
-            <span class="ico">🔄</span><span>${this.t("Sync Live DB", "लाइव डेटा सिंक")}</span>
-          </button>
-          `}
         </nav>
         <div class="side-footer">
           <div style="display:flex;gap:6px;align-items:center;justify-content:center;width:100%;margin-bottom:8px">

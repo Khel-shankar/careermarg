@@ -1007,6 +1007,8 @@ button.avatar:active {
   font-size: 1rem;
   text-align: center;
   line-height: 1.2;
+  white-space: nowrap;
+  box-sizing: border-box;
   transition:
     transform 0.15s ease,
     box-shadow 0.15s ease,
@@ -5439,19 +5441,26 @@ button.career-card:hover,
 .hero-btn-group {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 12px;
-  margin-top: 6px;
+  margin-top: 12px;
+}
+
+.hero-btn-group .btn {
+  flex: 0 1 auto;
+  white-space: nowrap;
 }
 
 .hero-btn-group .btn-primary {
-  min-height: 56px;
-  font-size: 1.08rem;
-  padding-inline: 26px;
+  min-height: 54px;
+  font-size: 1.05rem;
+  padding-inline: 24px;
 }
 
 .hero-btn-group .btn-secondary {
-  min-height: 56px;
-  font-size: 1rem;
+  min-height: 54px;
+  font-size: 0.98rem;
+  padding-inline: 20px;
 }
 
 .hero-trust-strip {
@@ -10368,13 +10377,13 @@ html, body {
 
 @media (max-width: 768px) {
   .landing-nav {
-    padding: 0 12px !important;
-    height: 56px !important;
-    min-height: 56px !important;
-    max-height: 56px !important;
+    padding: 0 10px !important;
+    height: 54px !important;
+    min-height: 54px !important;
+    max-height: 54px !important;
     width: 100% !important;
     max-width: 100vw !important;
-    gap: 8px !important;
+    gap: 6px !important;
     box-sizing: border-box !important;
     display: flex !important;
     align-items: center !important;
@@ -10386,11 +10395,11 @@ html, body {
     flex-shrink: 0 !important;
   }
   .landing-nav-brand .logo {
-    width: 30px !important;
-    height: 30px !important;
+    width: 28px !important;
+    height: 28px !important;
   }
   .landing-nav-brand strong {
-    font-size: 1.12rem !important;
+    font-size: 1.05rem !important;
     line-height: 1 !important;
   }
   .landing-nav-brand .tag {
@@ -10402,16 +10411,17 @@ html, body {
   .landing-nav-actions {
     display: flex !important;
     align-items: center !important;
-    gap: 6px !important;
+    gap: 4px !important;
     margin-left: auto !important;
-    flex-shrink: 1 !important;
+    flex-shrink: 0 !important;
+    flex-wrap: nowrap !important;
     min-width: 0 !important;
   }
   .landing-nav-actions .pill-btn {
-    padding: 0 8px !important;
-    height: 32px !important;
-    min-width: 32px !important;
-    font-size: 0.78rem !important;
+    padding: 0 6px !important;
+    height: 30px !important;
+    min-width: 30px !important;
+    font-size: 0.76rem !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -10421,32 +10431,38 @@ html, body {
   .landing-nav-actions .nav-btn-txt {
     display: none !important;
   }
-  .landing-nav-actions .nav-btn-signup-desktop {
-    display: none !important;
-  }
   .landing-nav-actions .btn-auth-nav {
-    padding: 0 12px !important;
-    height: 32px !important;
-    font-size: 0.8rem !important;
+    padding: 0 8px !important;
+    height: 30px !important;
+    font-size: 0.76rem !important;
     flex-shrink: 0 !important;
+    white-space: nowrap !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
   }
+  .landing-nav-actions .nav-btn-signup-desktop {
+    display: inline-flex !important;
+    padding: 0 9px !important;
+    height: 30px !important;
+    font-size: 0.76rem !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+  }
   
   /* User badge when logged in */
   .user-nav-badge {
-    padding: 2px 10px 2px 2px !important;
-    gap: 6px !important;
-    max-width: none !important;
+    padding: 2px 6px 2px 2px !important;
+    gap: 4px !important;
+    max-width: 120px !important;
     box-shadow: 0 2px 0 var(--ink) !important;
     flex-shrink: 0 !important;
     min-width: 0 !important;
   }
   .user-nav-badge .avatar {
-    width: 28px !important;
-    height: 28px !important;
-    font-size: 0.72rem !important;
+    width: 26px !important;
+    height: 26px !important;
+    font-size: 0.7rem !important;
     flex-shrink: 0 !important;
   }
   .user-nav-info {
@@ -10454,8 +10470,8 @@ html, body {
     flex-shrink: 1 !important;
   }
   .user-nav-info .uname {
-    font-size: 0.78rem !important;
-    max-width: 110px !important;
+    font-size: 0.74rem !important;
+    max-width: 60px !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
     white-space: nowrap !important;
@@ -10464,10 +10480,10 @@ html, body {
     display: none !important;
   }
   .btn-signout-nav {
-    padding: 0 6px !important;
-    height: 24px !important;
-    min-width: 24px !important;
-    font-size: 0.72rem !important;
+    padding: 0 4px !important;
+    height: 22px !important;
+    min-width: 22px !important;
+    font-size: 0.68rem !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -10476,10 +10492,17 @@ html, body {
   .btn-signout-nav .nav-btn-txt {
     display: none !important;
   }
+  .landing-nav-actions .nav-btn-dash {
+    padding: 0 8px !important;
+    height: 30px !important;
+    font-size: 0.75rem !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+  }
 
   /* Hero section & floating badges mobile positioning */
   .landing-hero {
-    padding: 24px 12px 36px !important;
+    padding: 20px 12px 32px !important;
     overflow-x: hidden !important;
   }
   .hero-grid-2col {
@@ -10489,9 +10512,16 @@ html, body {
   .hero-btn-group {
     flex-direction: column !important;
     width: 100% !important;
+    gap: 10px !important;
   }
   .hero-btn-group .btn {
     width: 100% !important;
+    min-width: 100% !important;
+    min-height: 48px !important;
+    font-size: 0.95rem !important;
+    white-space: nowrap !important;
+    padding: 12px 14px !important;
+    justify-content: center !important;
   }
   .hero-visual-card {
     max-width: 100% !important;
@@ -10520,28 +10550,36 @@ html, body {
 
 @media (max-width: 520px) {
   .landing-nav {
-    padding: 0 10px !important;
+    padding: 0 8px !important;
     height: 52px !important;
     min-height: 52px !important;
     max-height: 52px !important;
-    gap: 6px !important;
-  }
-  .landing-nav-brand strong {
-    font-size: 1.05rem !important;
-  }
-  .landing-nav-actions {
     gap: 4px !important;
   }
+  .landing-nav-brand strong {
+    font-size: 1rem !important;
+  }
+  .landing-nav-actions {
+    gap: 3px !important;
+  }
   .landing-nav-actions .pill-btn {
-    padding: 0 6px !important;
-    height: 30px !important;
-    min-width: 30px !important;
-    font-size: 0.74rem !important;
+    padding: 0 5px !important;
+    height: 28px !important;
+    min-width: 28px !important;
+    font-size: 0.72rem !important;
   }
   .landing-nav-actions .btn-auth-nav {
-    padding: 0 9px !important;
-    height: 30px !important;
-    font-size: 0.76rem !important;
+    padding: 0 7px !important;
+    height: 28px !important;
+    font-size: 0.74rem !important;
+    white-space: nowrap !important;
+  }
+  .landing-nav-actions .nav-btn-signup-desktop {
+    display: inline-flex !important;
+    padding: 0 7px !important;
+    height: 28px !important;
+    font-size: 0.74rem !important;
+    white-space: nowrap !important;
   }
   .dash-btn-full {
     display: none !important;
@@ -10550,74 +10588,82 @@ html, body {
     display: inline !important;
   }
   .user-nav-badge {
-    padding: 2px 4px 2px 2px !important;
-    gap: 4px !important;
-    max-width: 125px !important;
-  }
-  .user-nav-badge .avatar {
-    width: 26px !important;
-    height: 26px !important;
-    font-size: 0.68rem !important;
-  }
-  .user-nav-info .uname {
-    font-size: 0.74rem !important;
-    max-width: 55px !important;
-  }
-  .btn-signout-nav {
-    padding: 0 4px !important;
-    height: 22px !important;
-    min-width: 22px !important;
-    font-size: 0.68rem !important;
-  }
-}
-
-@media (max-width: 390px) {
-  .landing-nav {
-    padding: 0 6px !important;
-    height: 50px !important;
-    min-height: 50px !important;
-    max-height: 50px !important;
-    gap: 4px !important;
-  }
-  .landing-nav-brand .logo {
-    width: 26px !important;
-    height: 26px !important;
-  }
-  .landing-nav-brand strong {
-    font-size: 0.96rem !important;
-  }
-  .landing-nav-actions {
+    padding: 1px 4px 1px 1px !important;
     gap: 3px !important;
-  }
-  .landing-nav-actions .pill-btn {
-    padding: 0 4px !important;
-    height: 28px !important;
-    min-width: 28px !important;
-    font-size: 0.7rem !important;
-  }
-  .landing-nav-actions .btn-auth-nav {
-    padding: 0 6px !important;
-    height: 28px !important;
-    font-size: 0.72rem !important;
-  }
-  .user-nav-info {
-    display: none !important;
-  }
-  .user-nav-badge {
-    padding: 1px 3px 1px 1px !important;
-    gap: 3px !important;
-    max-width: none !important;
+    max-width: 105px !important;
   }
   .user-nav-badge .avatar {
     width: 24px !important;
     height: 24px !important;
     font-size: 0.65rem !important;
   }
+  .user-nav-info .uname {
+    font-size: 0.7rem !important;
+    max-width: 48px !important;
+  }
   .btn-signout-nav {
     padding: 0 3px !important;
     height: 20px !important;
     min-width: 20px !important;
     font-size: 0.65rem !important;
+  }
+}
+
+@media (max-width: 390px) {
+  .landing-nav {
+    padding: 0 4px !important;
+    height: 48px !important;
+    min-height: 48px !important;
+    max-height: 48px !important;
+    gap: 2px !important;
+  }
+  .landing-nav-brand .logo {
+    width: 24px !important;
+    height: 24px !important;
+  }
+  .landing-nav-brand strong {
+    font-size: 0.92rem !important;
+  }
+  .landing-nav-actions {
+    gap: 2px !important;
+  }
+  .landing-nav-actions .pill-btn {
+    padding: 0 3px !important;
+    height: 26px !important;
+    min-width: 26px !important;
+    font-size: 0.68rem !important;
+  }
+  .landing-nav-actions .btn-auth-nav {
+    padding: 0 5px !important;
+    height: 26px !important;
+    font-size: 0.7rem !important;
+    white-space: nowrap !important;
+  }
+  .landing-nav-actions .nav-btn-signup-desktop {
+    display: inline-flex !important;
+    padding: 0 5px !important;
+    height: 26px !important;
+    font-size: 0.7rem !important;
+    white-space: nowrap !important;
+  }
+  .user-nav-info {
+    display: none !important;
+  }
+  .user-nav-badge {
+    padding: 1px 2px !important;
+    gap: 2px !important;
+    max-width: none !important;
+  }
+  .user-nav-badge .avatar {
+    width: 22px !important;
+    height: 22px !important;
+    font-size: 0.62rem !important;
+  }
+  .btn-signout-nav {
+    padding: 0 2px !important;
+    height: 18px !important;
+    min-width: 18px !important;
+    font-size: 0.62rem !important;
   }
 }
 
