@@ -99,8 +99,10 @@ module.exports = async function handler(req, res) {
           if (s.status === "completed") {
             completedTiers.push(s.tier_code);
           }
-          const ans = typeof s.responses_json === "string" ? JSON.parse(s.responses_json || "{}") : (s.responses_json || {});
-          tierAnswers = { ...tierAnswers, ...ans };
+          if (s.responses_json) {
+            const ans = typeof s.responses_json === "string" ? JSON.parse(s.responses_json) : s.responses_json;
+            tierAnswers = { ...tierAnswers, ...ans };
+          }
         });
 
         const { data: traits } = await sb
@@ -111,40 +113,44 @@ module.exports = async function handler(req, res) {
 
         let scores = {};
         if (traits && traits.length) {
-          scores = typeof traits[0].all_scores_json === "string" ? JSON.parse(traits[0].all_scores_json || "{}") : (traits[0].all_scores_json || {});
+          const raw = traits[0].all_scores_json;
+          scores = typeof raw === "string" ? JSON.parse(raw) : raw || {};
         }
 
-        let savedCareers = user.saved_careers || [];
-        if (typeof savedCareers === "string") {
-          try { savedCareers = JSON.parse(savedCareers); } catch (_) {}
-        }
+        // Fetch matches if available
+        let savedMatches = [];
+        try {
+          const { data: matches } = await sb
+            .from("student_career_matches")
+            .select("*")
+            .eq("user_id", user.id)
+            .order("match_percent", { ascending: false })
+            .limit(10);
+          if (matches) savedMatches = matches;
+        } catch (_) {}
 
         return res.status(200).json({
           success: true,
           provider: "supabase",
-          user: {
-            ...user,
-            full_name: user.name,
-            grade_level: user.grade_group,
-          },
+          user,
           completedTiers,
           tierAnswers,
           scores,
-          savedCareers,
+          savedCareers: user.saved_careers || [],
+          matches: savedMatches,
         });
       } catch (err) {
-        return res.status(200).json({
-          success: true,
-          offline: true,
-          message: "Supabase fallback: " + err.message,
-        });
+        console.warn("Supabase sync GET fallback:", err.message);
       }
     }
 
-    // 2. MYSQL HANDLER
+    // 2. MYSQL FALLBACK
     try {
       const p = getPool();
-      const [users] = await p.query("SELECT * FROM `users` WHERE `id` = ? OR `email` = ? LIMIT 1", [userId, userId]);
+      const [users] = await p.query(
+        "SELECT * FROM `users` WHERE `id` = ? OR `email` = ? LIMIT 1",
+        [userId, userId]
+      );
       if (!users.length) {
         return res.status(200).json({ success: true, user: null });
       }
@@ -208,6 +214,7 @@ module.exports = async function handler(req, res) {
     const grade = data.grade || "10";
     const stream = data.stream || "general";
     const savedCareers = data.savedCareers || [];
+    const matches = data.matches || [];
 
     // 1. SUPABASE SYNC HANDLER
     if (sb) {
@@ -217,10 +224,11 @@ module.exports = async function handler(req, res) {
           id: userId,
           name: userName,
           email: userEmail,
-          role: "student",
+          role: data.role || "student",
           grade_group: grade,
           stream: stream,
           saved_careers: savedCareers,
+          school_name: data.school || "Kendriya Vidyalaya",
           updated_at: new Date().toISOString(),
         });
         if (userErr) throw userErr;
@@ -233,6 +241,7 @@ module.exports = async function handler(req, res) {
           tier1_quick_riasec: { prefix: "qria-", total: 24 },
           tier2_tamanna: { prefix: "tam-", total: 28 },
           tier3_ocean: { prefix: "oce-", total: 20 },
+          mental_health: { prefix: "res-", total: 12 },
         };
 
         for (const [tierCode, meta] of Object.entries(tierMetadata)) {
@@ -267,11 +276,12 @@ module.exports = async function handler(req, res) {
         // Upsert Trait Scores
         const traitScores = data.traitScores || {};
         if (Object.keys(traitScores).length > 0) {
-          const riasec = traitScores.riasec || {};
+          const riasec = traitScores.riasec || traitScores;
           let primary = null, secondary = null;
-          const sorted = Object.entries(riasec).sort((a, b) => b[1] - a[1]);
-          if (sorted.length > 0) primary = sorted[0][0];
-          if (sorted.length > 1) secondary = sorted[1][0];
+          const riasecKeys = ["R", "I", "A", "S", "E", "C"];
+          const sorted = riasecKeys.map(k => [k, riasec[k] || 0]).sort((a, b) => b[1] - a[1]);
+          if (sorted.length > 0 && sorted[0][1] > 0) primary = sorted[0][0];
+          if (sorted.length > 1 && sorted[1][1] > 0) secondary = sorted[1][0];
 
           await sb.from("student_trait_scores").upsert(
             {
@@ -285,88 +295,107 @@ module.exports = async function handler(req, res) {
           );
         }
 
+        // Upsert Top Career Matches into Supabase (if table exists)
+        if (Array.isArray(matches) && matches.length > 0) {
+          for (const m of matches.slice(0, 10)) {
+            try {
+              await sb.from("student_career_matches").upsert({
+                user_id: userId,
+                career_id: m.id,
+                match_percent: m.fit || 50,
+                breakdown_json: m.matchBreakdown || {},
+                reasons_json: m.reasons || [],
+                updated_at: new Date().toISOString()
+              }, { onConflict: "user_id,career_id" });
+            } catch (_) {}
+          }
+        }
+
         return res.status(200).json({
           success: true,
           provider: "supabase",
           offline: false,
-          message: "All assessment data saved live to Supabase Table Editor!",
+          message: "All assessment and career matches saved live to Supabase Table Editor!",
         });
       } catch (err) {
-        return res.status(200).json({
-          success: true,
-          offline: true,
-          message: "Saved locally (Supabase error: " + err.message + ")",
-        });
+        console.warn("Supabase sync POST fallback:", err.message);
       }
     }
 
-    // 2. MYSQL SYNC HANDLER
+    // 2. MYSQL SYNC FALLBACK
     try {
       const p = getPool();
-      const school = data.school || "Government High School";
-      const educationStatus = data.educationStatus || "pursuing";
-      const city = data.city || "";
-      const roleModelArchetype = data.roleModelArchetype || "tech";
-      const roleModelName = data.roleModelName || "";
-      const dreamImpact = data.dreamImpact || "";
-      const aspiration = data.aspiration || "";
-      const workStyle = data.workStyle || "analytical";
-      const interests = JSON.stringify(data.interestTags || []);
-      const savedCareersJson = JSON.stringify(savedCareers);
-      const finalizedCareer = data.finalizedCareer || null;
-
       await p.query(
-        `INSERT INTO \`users\` (\`id\`, \`role\`, \`email\`, \`password_hash\`, \`full_name\`, \`grade_level\`, \`school_name\`, \`education_status\`, \`city\`, \`stream\`, \`role_model_archetype\`, \`role_model_name\`, \`dream_impact\`, \`aspiration\`, \`interest_tags\`, \`work_style\`, \`saved_careers\`, \`finalized_career\`)
-         VALUES (?, 'student', ?, '$2y$10$demoHashPlaceholder', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-         ON DUPLICATE KEY UPDATE
-             full_name = VALUES(full_name),
-             grade_level = VALUES(grade_level),
-             school_name = VALUES(school_name),
-             education_status = VALUES(education_status),
-             city = VALUES(city),
-             stream = VALUES(stream),
-             role_model_archetype = VALUES(role_model_archetype),
-             role_model_name = VALUES(role_model_name),
-             dream_impact = VALUES(dream_impact),
-             aspiration = VALUES(aspiration),
-             interest_tags = VALUES(interest_tags),
-             work_style = VALUES(work_style),
-             saved_careers = VALUES(saved_careers),
-             finalized_career = VALUES(finalized_career)`,
-        [
-          userId,
-          userEmail,
-          userName,
-          grade,
-          school,
-          educationStatus,
-          city,
-          stream,
-          roleModelArchetype,
-          roleModelName,
-          dreamImpact,
-          aspiration,
-          interests,
-          workStyle,
-          savedCareersJson,
-          finalizedCareer,
-        ]
+        "INSERT INTO `users` (`id`, `name`, `email`, `role`, `grade_group`, `stream`, `saved_careers`, `school_name`) " +
+        "VALUES (?, ?, ?, 'student', ?, ?, ?, ?) " +
+        "ON DUPLICATE KEY UPDATE `name` = VALUES(`name`), `grade_group` = VALUES(`grade_group`), `stream` = VALUES(`stream`), `saved_careers` = VALUES(`saved_careers`)",
+        [userId, userName, userEmail, grade, stream, JSON.stringify(savedCareers), data.school || "Kendriya Vidyalaya"]
       );
+
+      const completedTiers = data.completedTiers || [];
+      const tierAnswers = data.tierAnswers || {};
+      const tierMetadata = {
+        tier1_riasec: { prefix: "ria-", total: 42 },
+        tier1_quick_riasec: { prefix: "qria-", total: 24 },
+        tier2_tamanna: { prefix: "tam-", total: 28 },
+        tier3_ocean: { prefix: "oce-", total: 20 },
+        mental_health: { prefix: "res-", total: 12 },
+      };
+
+      for (const [tierCode, meta] of Object.entries(tierMetadata)) {
+        const tierAns = {};
+        let ansCount = 0;
+        for (const [k, v] of Object.entries(tierAnswers)) {
+          if (k.startsWith(meta.prefix)) {
+            tierAns[k] = v;
+            ansCount++;
+          }
+        }
+
+        const isDone = completedTiers.includes(tierCode) || ansCount >= meta.total;
+        if (ansCount > 0 || isDone) {
+          const status = isDone ? "completed" : "in_progress";
+          const progressPercent = Math.min(100, Math.round((ansCount / meta.total) * 100));
+
+          await p.query(
+            "INSERT INTO `student_assessment_sessions` (`user_id`, `tier_code`, `status`, `progress_percent`, `responses_json`, `completed_at`) " +
+            "VALUES (?, ?, ?, ?, ?, ?) " +
+            "ON DUPLICATE KEY UPDATE `status` = VALUES(`status`), `progress_percent` = VALUES(`progress_percent`), `responses_json` = VALUES(`responses_json`), `completed_at` = VALUES(`completed_at`)",
+            [userId, tierCode, status, progressPercent, JSON.stringify(tierAns), isDone ? new Date() : null]
+          );
+        }
+      }
+
+      const traitScores = data.traitScores || {};
+      if (Object.keys(traitScores).length > 0) {
+        const riasec = traitScores.riasec || traitScores;
+        let primary = null, secondary = null;
+        const riasecKeys = ["R", "I", "A", "S", "E", "C"];
+        const sorted = riasecKeys.map(k => [k, riasec[k] || 0]).sort((a, b) => b[1] - a[1]);
+        if (sorted.length > 0 && sorted[0][1] > 0) primary = sorted[0][0];
+        if (sorted.length > 1 && sorted[1][1] > 0) secondary = sorted[1][0];
+
+        await p.query(
+          "INSERT INTO `student_trait_scores` (`user_id`, `riasec_primary`, `riasec_secondary`, `all_scores_json`) " +
+          "VALUES (?, ?, ?, ?) " +
+          "ON DUPLICATE KEY UPDATE `riasec_primary` = VALUES(`riasec_primary`), `riasec_secondary` = VALUES(`riasec_secondary`), `all_scores_json` = VALUES(`all_scores_json`)",
+          [userId, primary, secondary, JSON.stringify(traitScores)]
+        );
+      }
 
       return res.status(200).json({
         success: true,
         provider: "mysql",
-        offline: false,
-        message: "All data synchronized live to MySQL database!",
+        message: "Assessment session saved to local MySQL database!",
       });
     } catch (err) {
       return res.status(200).json({
         success: true,
         offline: true,
-        message: "Fallback saved locally: " + err.message,
+        message: "Saved in client browser memory (Database sync pending: " + err.message + ")",
       });
     }
   }
 
-  return res.status(405).json({ success: false, message: "Method not allowed" });
+  return res.status(405).json({ error: "Method not allowed" });
 };

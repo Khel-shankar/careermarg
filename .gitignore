@@ -6,3 +6,6 @@ node_modules/
 *.log
 *.mp4
 WhatsApp*
+~$*
+.env
+.vercel

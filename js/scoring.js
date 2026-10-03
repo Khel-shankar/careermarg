@@ -1,9 +1,15 @@
 /**
- * CAREERMARG (DISHA V2) - Psychometric & Cognitive Scoring Engine
- * Includes:
+ * CAREERMARG - Psychometric & Cognitive Scoring Engine
+ * Conforms to:
+ * - Group I (Classes 6–8): Foundation Stage - Holland RIASEC Interest Battery
+ * - Group II (Classes 9–10): Exploration Stage - Holland RIASEC + NCERT TAMANNA 7-Domain Aptitude
+ * - Group III (Classes 11–12 & Beyond): Decision Stage - RIASEC + TAMANNA + Big Five (OCEAN) Personality
+ *
+ * Features:
  * - Multi-tier trait scoring (RIASEC, TAMANNA 7-domain, Big 5 OCEAN, Exam Resilience)
  * - Pure Vector SVG Radar Chart Generator
- * - Multi-dimensional Explainable Career Matching Engine with dynamic stage awareness
+ * - Transparent, Explainable Career Matching Engine with mathematical factor breakdown
+ * - Stream & Subject Recommendation Engine (PCM, PCB, Commerce w/ Math, Commerce w/o Math, Humanities)
  */
 
 window.MoineeScore = {
@@ -17,7 +23,9 @@ window.MoineeScore = {
     const questions = (allQuestions || window.DISHA_ALL_QUESTIONS || []).filter((q) => q.tier === tierId);
     if (!questions.length) return {};
 
-    const answeredList = questions.filter(q => answers && answers[q.id] !== undefined && answers[q.id] !== null && answers[q.id] !== "");
+    const answeredList = questions.filter(
+      (q) => answers && answers[q.id] !== undefined && answers[q.id] !== null && answers[q.id] !== "" && !Number.isNaN(answers[q.id])
+    );
     if (!answeredList.length) return {};
 
     const traitScores = {};
@@ -27,29 +35,43 @@ window.MoineeScore = {
     questions.forEach((q) => {
       const trait = q.traitCode;
       if (!trait) return;
-      if (!traitTotals[trait]) {
+      if (traitTotals[trait] === undefined) {
         traitTotals[trait] = 0;
         traitMax[trait] = 0;
       }
 
       const ans = answers[q.id];
-      if (q.type === "mcq_single") {
+      if (ans === undefined || ans === null || ans === "" || Number.isNaN(ans)) return;
+
+      if (q.type === "mcq_single" || q.correctKey) {
         traitMax[trait] += 100;
         if (ans === q.correctKey) {
           traitTotals[trait] += 100;
         }
-      } else {
-        traitMax[trait] += 5;
-        if (ans) {
-          traitTotals[trait] += Number(ans);
+      } else if (q.type === "binary_choice" || (q.options && q.options.length === 2)) {
+        traitMax[trait] += 1;
+        if (ans === "like" || ans === "yes" || ans === "1" || ans === 1 || ans === true) {
+          traitTotals[trait] += 1;
         }
+      } else {
+        // Likert 1-5 scale (Calibrated POMP Psychometric Standard: 1=0%, 2=25%, 3=50%, 4=75%, 5=100%)
+        traitMax[trait] += 4;
+        let num = Number(ans);
+        if (isNaN(num)) {
+          const letterMap = { a: 1, b: 2, c: 3, d: 4, e: 5 };
+          num = letterMap[String(ans).toLowerCase()] || 3;
+        }
+        traitTotals[trait] += Math.max(0, Math.min(4, num - 1));
       }
     });
 
     Object.keys(traitTotals).forEach((t) => {
-      const max = traitMax[t] || 1;
-      const val = traitTotals[t];
-      traitScores[t] = Math.round((val / max) * 100);
+      const max = traitMax[t];
+      if (max > 0) {
+        traitScores[t] = Math.round((traitTotals[t] / max) * 100);
+      } else {
+        traitScores[t] = 0;
+      }
     });
 
     return traitScores;
@@ -65,11 +87,13 @@ window.MoineeScore = {
     ];
 
     const traits = {};
-    const tiers = ["tier1_riasec", "tier2_tamanna", "tier3_ocean", "mental_health"];
+    const tiers = ["tier1_riasec", "tier1_quick_riasec", "tier2_tamanna", "tier3_ocean", "mental_health"];
 
     tiers.forEach((tier) => {
       const tierQs = qList.filter((q) => q.tier === tier);
-      const hasAnswers = tierQs.some((q) => answers && answers[q.id] !== undefined && answers[q.id] !== null && answers[q.id] !== "");
+      const hasAnswers = tierQs.some(
+        (q) => answers && answers[q.id] !== undefined && answers[q.id] !== null && answers[q.id] !== ""
+      );
       if (hasAnswers) {
         const tierScores = this.scoreTier(tier, answers, qList);
         Object.entries(tierScores).forEach(([k, v]) => {
@@ -80,13 +104,13 @@ window.MoineeScore = {
       }
     });
 
-    // Extract RIASEC dominant code if RIASEC has scores
+    // Extract RIASEC dominant code
     const riasecKeys = ["R", "I", "A", "S", "E", "C"];
     const hasRiasec = riasecKeys.some((k) => traits[k] !== undefined);
     const riasecRanked = hasRiasec
       ? riasecKeys.map((k) => [k, traits[k] || 0]).sort((a, b) => b[1] - a[1])
       : [];
-    const hollandCode = riasecRanked.length >= 3 ? riasecRanked.slice(0, 3).map(([k]) => k).join("") : "IES";
+    const hollandCode = riasecRanked.length >= 3 ? riasecRanked.slice(0, 3).map(([k]) => k).join("") : "IRC";
 
     return {
       traits,
@@ -94,6 +118,89 @@ window.MoineeScore = {
       riasecRanked,
       ...traits,
     };
+  },
+
+  // Stream Recommendation based on TAMANNA & RIASEC
+  recommendStreams(traits) {
+    const na = traits.TAMANNA_NA || 50;
+    const sa = traits.TAMANNA_SA || 50;
+    const ma = traits.TAMANNA_MA || 50;
+    const va = traits.TAMANNA_VA || 50;
+    const la = traits.TAMANNA_LA || 50;
+    const ar = traits.TAMANNA_AR || 50;
+    const pa = traits.TAMANNA_PA || 50;
+
+    const r = traits.R || 50;
+    const i = traits.I || 50;
+    const e = traits.E || 50;
+    const c = traits.C || 50;
+    const a = traits.A || 50;
+    const s = traits.S || 50;
+
+    const streams = [
+      {
+        id: "science_pcm",
+        title: "Science (PCM / PCMB)",
+        titleHi: "विज्ञान (गणित / भौतिकी / रसायन)",
+        icon: "🔬",
+        color: "#3b82f6",
+        score: Math.round(na * 0.35 + sa * 0.25 + ma * 0.20 + (r * 0.10 + i * 0.10)),
+        fields: ["Engineering", "Robotics", "Architecture", "Data Science", "Aviation"],
+        fieldsHi: ["इंजीनियरिंग", "रोबोटिक्स", "आर्किटेक्चर", "डेटा साइंस", "विमानन"],
+        reasonEn: "High numerical, spatial, and mechanical aptitudes indicate strong potential in engineering and technical sciences.",
+        reasonHi: "उच्च संख्यात्मक, स्थानिक और यांत्रिक क्षमताएं इंजीनियरिंग और तकनीकी क्षेत्रों के लिए उपयुक्त हैं।"
+      },
+      {
+        id: "science_pcb",
+        title: "Science (PCB / Healthcare)",
+        titleHi: "विज्ञान (जीव विज्ञान / चिकित्सा)",
+        icon: "🩺",
+        color: "#10b981",
+        score: Math.round(i * 0.35 + s * 0.25 + ar * 0.20 + na * 0.20),
+        fields: ["Medicine (MBBS)", "Biotechnology", "Psychology", "Genetics", "Pharmacy"],
+        fieldsHi: ["चिकित्सा (एमबीबीएस)", "बायोटेक्नोलॉजी", "मनोविज्ञान", "आनुवंशिकी", "फार्मेसी"],
+        reasonEn: "Strong investigative inquiry combined with social empathy aligns with medical and life sciences.",
+        reasonHi: "खोजी स्वभाव और सामाजिक सेवा भावना चिकित्सा एवं जीवन विज्ञान के लिए आदर्श है।"
+      },
+      {
+        id: "commerce_math",
+        title: "Commerce with Mathematics",
+        titleHi: "वाणिज्य (गणित सहित)",
+        icon: "📈",
+        color: "#f59e0b",
+        score: Math.round(na * 0.35 + pa * 0.25 + e * 0.20 + c * 0.20),
+        fields: ["Chartered Accountancy (CA)", "Investment Banking", "Actuarial Science", "Economics", "Fintech"],
+        fieldsHi: ["सीए (चार्टर्ड अकाउंटेंसी)", "इन्वेस्टमेंट बैंकिंग", "एक्चुरियल साइंस", "अर्थशास्त्र", "फिनटेक"],
+        reasonEn: "Excellent quantitative precision and conventional accuracy suit high-finance and actuarial paths.",
+        reasonHi: "उत्कृष्ट गणितीय सटीकता और संगठनात्मक क्षमताएं उच्च वित्त एवं बैंकिंग के अनुकूल हैं।"
+      },
+      {
+        id: "commerce_general",
+        title: "Commerce & Business Management",
+        titleHi: "वाणिज्य एवं व्यवसाय प्रबंधन",
+        icon: "💼",
+        color: "#8b5cf6",
+        score: Math.round(e * 0.35 + c * 0.25 + va * 0.20 + pa * 0.20),
+        fields: ["Business Administration (BBA)", "Marketing", "International Trade", "Entrepreneurship"],
+        fieldsHi: ["बिजनेस एडमिनिस्ट्रेशन (बीबीए)", "मार्केटिंग", "अंतरराष्ट्रीय व्यापार", "स्टार्टअप / उद्यमिता"],
+        reasonEn: "High enterprising drive and verbal clarity empower leadership and corporate management.",
+        reasonHi: "उद्यमी नेतृत्व और मौखिक संवाद क्षमताएं कॉर्पोरेट प्रबंधन के लिए उपयुक्त हैं।"
+      },
+      {
+        id: "humanities",
+        title: "Humanities, Law & Liberal Arts",
+        titleHi: "मानविकी, कानून एवं कला संकाय",
+        icon: "⚖️",
+        color: "#ec4899",
+        score: Math.round(va * 0.30 + la * 0.25 + ar * 0.25 + (a * 0.10 + s * 0.10)),
+        fields: ["Law (LLB)", "Civil Services (UPSC)", "Psychology", "Journalism", "Public Policy", "Design"],
+        fieldsHi: ["कानून (एलएलबी)", "सिविल सेवा (यूपीएससी)", "मनोविज्ञान", "पत्रकारिता", "पब्लिक पॉलिसी", "डिजाइन"],
+        reasonEn: "Superb linguistic mastery, verbal reasoning, and abstract thinking excel in law, civil services, and media.",
+        reasonHi: "उत्कृष्ट भाषाई कौशल, अमूर्त तार्किकता और सामाजिक संवेदनशीलता कानून व लोक सेवा के लिए सर्वोत्तम हैं।"
+      }
+    ];
+
+    return streams.sort((a, b) => b.score - a.score);
   },
 
   // Pure Vector SVG Radar Chart Generator
@@ -149,7 +256,6 @@ window.MoineeScore = {
 
       vertexCircles += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4" fill="${strokeColor}" stroke="var(--card, #fff)" stroke-width="1.5"/>`;
 
-      // Smart label positioning & text-anchor to avoid clipping on canvas edges
       const cosVal = Math.cos(angle);
       const sinVal = Math.sin(angle);
       const labelDist = radius + 22;
@@ -182,30 +288,6 @@ window.MoineeScore = {
     `;
   },
 
-  scoreRiasec(answers, questions) {
-    const totals = { R: 0, I: 0, A: 0, S: 0, E: 0, C: 0 };
-    const counts = { R: 0, I: 0, A: 0, S: 0, E: 0, C: 0 };
-
-    (questions || []).forEach((q) => {
-      const val = answers[q.id];
-      if (val === undefined || val === null) return;
-      const tr = q.traitCode || q.trait;
-      if (tr && totals[tr] !== undefined) {
-        totals[tr] += Number(val);
-        counts[tr] += 1;
-      }
-    });
-
-    const scores = {};
-    Object.keys(totals).forEach((trait) => {
-      const max = Math.max(counts[trait] * 5, 1);
-      scores[trait] = Math.round((totals[trait] / max) * 100);
-    });
-
-    const ranked = Object.entries(scores).sort((a, b) => b[1] - a[1]);
-    return { scores, ranked, code: ranked.slice(0, 3).map(([t]) => t).join("") };
-  },
-
   // Stream-to-Sector Synergy Map
   _streamSectors: {
     eng_tech: { primary: ["it_tech", "engineering"], secondary: ["technical_skills", "research"] },
@@ -218,7 +300,7 @@ window.MoineeScore = {
     design_media: { primary: ["arts_media", "it_tech"], secondary: ["education"] },
     law: { primary: ["public_policy", "government"], secondary: ["management"] },
     med_health: { primary: ["healthcare", "research"], secondary: ["education"] },
-    general: { primary: ["it_tech", "engineering", "business_finance", "healthcare", "arts_media"], secondary: [] },
+    general: { primary: ["it_tech", "engineering", "business_finance", "healthcare", "arts_media", "government"], secondary: [] },
   },
 
   _archetypeSectors: {
@@ -234,14 +316,14 @@ window.MoineeScore = {
   },
 
   _tagKeywords: {
-    ai_ml: ["ai", "artificial intelligence", "machine learning", "data", "deep learning", "neural", "analytics", "metaverse"],
-    web_dev: ["software", "developer", "web", "frontend", "backend", "full stack", "coding", "programmer", "apps", "engineer", "systems"],
+    ai_ml: ["ai", "artificial intelligence", "machine learning", "data", "deep learning", "neural", "analytics"],
+    web_dev: ["software", "developer", "web", "frontend", "backend", "full stack", "coding", "programmer", "apps", "engineer"],
     robotics: ["robot", "automation", "mechatronics", "hardware", "embedded", "iot"],
     cybersecurity: ["security", "cyber", "ethical hacking", "network", "cryptography", "forensics"],
     esports_comp: ["game", "gaming", "vr", "ar", "metaverse", "virtual"],
     game_design: ["game", "vr", "ar", "3d", "level", "animator", "developer"],
     chess_strategy: ["strategy", "analyst", "architect", "consultant", "intelligence", "tactical"],
-    stock_market: ["finance", "stock", "investment", "equity", "trading", "portfolio", "financial", "banker"],
+    stock_market: ["finance", "stock", "investment", "equity", "trading", "portfolio", "banker"],
     psychology: ["psychology", "counselling", "behaviour", "social", "user experience", "hr", "mentor"],
     cricket: ["sports", "coach", "fitness", "athletic"],
     football: ["sports", "athlete", "fitness"],
@@ -252,160 +334,249 @@ window.MoineeScore = {
     arts: ["artist", "creative", "painter", "illustrator", "visual"],
   },
 
+  /**
+   * Transparent Multi-Factor Career Matching Algorithm
+   * Integrates:
+   * 1. RIASEC Holland Interest Code Congruence
+   * 2. NCERT TAMANNA Cognitive Aptitude Alignment
+   * 3. Big Five (OCEAN) Personality Trait Fit
+   * 4. Academic Stream / Subject Synergy
+   */
   matchCareers(profile, careers) {
-    const riasec = (profile.riasec && profile.riasec.scores) || profile.traitScores || {};
-    const aptitude = (profile.aptitude && profile.aptitude.scores) || profile.traitScores || {};
+    const traits = profile.traitScores || {};
     const tags = profile.interestTags || [];
     const studentStream = profile.stream || "general";
     const archetype = profile.roleModelArchetype || "";
     const aspiration = (profile.aspiration || "").toLowerCase();
 
-    // Check completed tiers strictly
+    // Check which assessments have been completed
     const completed = profile.completedTiers || [];
-    const hasTamanna = completed.includes("tier2_tamanna") && Object.keys(aptitude).some(k => k.startsWith("TAMANNA_") && Number(aptitude[k]) > 0);
+    const hasRiasec = completed.includes("tier1_riasec") || ["R", "I", "A", "S", "E", "C"].some(k => traits[k] !== undefined);
+    const hasTamanna = completed.includes("tier2_tamanna") || Object.keys(traits).some(k => k.startsWith("TAMANNA_") && Number(traits[k]) > 0);
+    const hasOcean = completed.includes("tier3_ocean") || Object.keys(traits).some(k => k.startsWith("OCEAN_") && Number(traits[k]) > 0);
 
     const streamInfo = this._streamSectors[studentStream] || this._streamSectors.general;
     const archetypeSectors = this._archetypeSectors[archetype] || [];
-
     const careerList = careers || window.DISHA_CAREER_DATABASE || window.DISHA_DATA?.careers || [];
 
     return careerList
       .map((career) => {
-        // 1. RIASEC Alignment (0 to 1)
-        let interestFit = 0.55;
+        const cSec = career.sectorId || career.sector || "";
+
+        // 1. RIASEC Alignment (0 to 100)
+        let riasecPct = 55;
+        let riasecReason = "Vocational interest alignment with your profile.";
         if (typeof career.riasec === "string" && career.riasec.length > 0) {
           const code = career.riasec;
           const weights = [0.45, 0.35, 0.20];
           let sum = 0, totalW = 0;
           for (let i = 0; i < code.length && i < 3; i++) {
             const char = code[i];
-            const userScore = riasec[char] !== undefined ? riasec[char] : 50;
-            sum += (userScore / 100) * weights[i];
+            const userScore = traits[char] !== undefined ? traits[char] : 50;
+            sum += userScore * weights[i];
             totalW += weights[i];
           }
-          interestFit = totalW ? sum / totalW : 0.55;
+          riasecPct = Math.round(totalW ? sum / totalW : 55);
+          const firstChar = code[0];
+          const secondChar = code[1] || "";
+          riasecReason = `High alignment with your Holland Code traits: ${firstChar} (${traits[firstChar] || 50}%)${secondChar ? ` & ${secondChar} (${traits[secondChar] || 50}%)` : ""}.`;
         } else if (career.riasec && typeof career.riasec === "object") {
           let sum = 0, totalW = 0;
-          Object.entries(career.riasec).forEach(([trait, w]) => {
-            sum += ((riasec[trait] || 50) / 100) * w;
+          Object.entries(career.riasec).forEach(([t, w]) => {
+            sum += (traits[t] || 50) * w;
             totalW += w;
           });
-          interestFit = totalW ? sum / totalW : 0.55;
+          riasecPct = Math.round(totalW ? sum / totalW : 55);
         }
 
-        // 2. Stream & Sector Synergy Boost
-        let sectorBoost = 0;
-        const cSec = career.sectorId || "";
+        // 2. TAMANNA Cognitive Aptitude Fit (0 to 100)
+        let aptitudePct = 60;
+        let aptitudeReason = "General cognitive aptitude benchmark satisfied.";
+        if (hasTamanna) {
+          let aptScore = 0, aptWeight = 0;
+          const matchedAptitudes = [];
+          if (career.aptitude && typeof career.aptitude === "object" && Object.keys(career.aptitude).length > 0) {
+            Object.entries(career.aptitude).forEach(([domain, w]) => {
+              const directVal = traits[domain] || traits[`TAMANNA_${domain.toUpperCase()}`] || traits[`TAMANNA_${domain}`] || 50;
+              aptScore += directVal * w;
+              aptWeight += w;
+              matchedAptitudes.push(`${domain.toUpperCase()}: ${directVal}%`);
+            });
+            aptitudePct = Math.round(aptWeight ? aptScore / aptWeight : 60);
+          } else {
+            // General domain mapping based on sector
+            if (cSec === "it_tech" || cSec === "engineering") {
+              aptitudePct = Math.round(((traits.TAMANNA_NA || 50) * 0.4 + (traits.TAMANNA_SA || 50) * 0.3 + (traits.TAMANNA_MA || 50) * 0.3));
+            } else if (cSec === "healthcare" || cSec === "research") {
+              aptitudePct = Math.round(((traits.TAMANNA_AR || 50) * 0.4 + (traits.TAMANNA_NA || 50) * 0.3 + (traits.TAMANNA_VA || 50) * 0.3));
+            } else if (cSec === "business_finance" || cSec === "management") {
+              aptitudePct = Math.round(((traits.TAMANNA_NA || 50) * 0.4 + (traits.TAMANNA_PA || 50) * 0.3 + (traits.TAMANNA_VA || 50) * 0.3));
+            } else {
+              aptitudePct = Math.round(((traits.TAMANNA_VA || 50) * 0.4 + (traits.TAMANNA_LA || 50) * 0.3 + (traits.TAMANNA_AR || 50) * 0.3));
+            }
+          }
+          if (matchedAptitudes.length > 0) {
+            aptitudeReason = `Cognitive domain strengths: ${matchedAptitudes.slice(0, 2).join(", ")}.`;
+          }
+        }
+
+        // 3. Big Five (OCEAN) Personality Fit (0 to 100)
+        let oceanPct = 65;
+        let oceanReason = "Balanced personality dynamics suitable for professional practice.";
+        if (hasOcean) {
+          const o = traits.OCEAN_O || 50;
+          const c = traits.OCEAN_C || 50;
+          const e = traits.OCEAN_E || 50;
+          const a = traits.OCEAN_A || 50;
+          const n = traits.OCEAN_N || 50;
+
+          if (cSec === "it_tech" || cSec === "engineering" || cSec === "research") {
+            oceanPct = Math.round(c * 0.4 + o * 0.35 + n * 0.25);
+            oceanReason = `Disciplined Conscientiousness (${c}%) and Openness (${o}%) suit complex problem solving.`;
+          } else if (cSec === "business_finance" || cSec === "management") {
+            oceanPct = Math.round(e * 0.4 + c * 0.35 + o * 0.25);
+            oceanReason = `High Extraversion (${e}%) and Conscientiousness (${c}%) support strategic leadership.`;
+          } else if (cSec === "healthcare" || cSec === "education") {
+            oceanPct = Math.round(a * 0.4 + c * 0.35 + n * 0.25);
+            oceanReason = `Strong Agreeableness (${a}%) and Empathy support patient and student care.`;
+          } else {
+            oceanPct = Math.round(o * 0.4 + e * 0.3 + a * 0.3);
+            oceanReason = `Creative Openness (${o}%) and Expressiveness suit media and communication.`;
+          }
+        }
+
+        // 4. Stream & Sector Synergy (0 to 100)
+        let streamPct = 50;
+        let streamReason = "Open career pathway accessible across academic streams.";
         if (streamInfo.primary && streamInfo.primary.includes(cSec)) {
-          sectorBoost += 0.12;
+          streamPct = 95;
+          streamReason = `Directly aligned with your ${studentStream.replace(/_/g, " ").toUpperCase()} curriculum.`;
         } else if (streamInfo.secondary && streamInfo.secondary.includes(cSec)) {
-          sectorBoost += 0.06;
-        } else if (studentStream !== "general") {
-          sectorBoost -= 0.08; // Penalty for unrelated stream sector
+          streamPct = 75;
+          streamReason = `Cross-disciplinary progression supported from ${studentStream.replace(/_/g, " ")}.`;
+        } else if (studentStream === "general") {
+          streamPct = 70;
+          streamReason = "Broad foundational curriculum allows exploration.";
+        } else {
+          streamPct = 40;
+          streamReason = "May require supplementary elective bridge courses.";
         }
 
-        // 3. Role Model Archetype Synergy
-        let archetypeBoost = 0;
-        if (archetypeSectors.includes(cSec)) {
-          archetypeBoost += 0.06;
-        }
-
-        // 4. Interest Tags Boost
+        // 5. Interest Tags & Archetype Boosts (0 to 10)
         let tagBoost = 0;
         const careerText = ((career.title || "") + " " + (career.traits || "") + " " + (career.sector || "") + " " + (career.educationPath || "")).toLowerCase();
         let matchedTagLabels = [];
         tags.forEach((t) => {
           const kws = this._tagKeywords[t] || [t.toLowerCase().replace(/_/g, " ")];
-          const hit = kws.some((kw) => careerText.includes(kw));
-          if (hit) {
-            tagBoost += 0.04;
-            matchedTagLabels.push(t);
+          if (kws.some((kw) => careerText.includes(kw))) {
+            tagBoost += 3;
+            matchedTagLabels.push(t.replace(/_/g, " "));
           }
         });
-        tagBoost = Math.min(0.16, tagBoost);
+        tagBoost = Math.min(10, tagBoost);
 
-        // 5. Aspiration Boost
-        let aspirationBoost = 0;
-        if (aspiration) {
-          const titleWords = (career.title || "").toLowerCase().split(/\s+/);
-          const hits = titleWords.filter((w) => w.length > 3 && aspiration.includes(w)).length;
-          if (hits >= 2) aspirationBoost += 0.08;
-          else if (hits === 1) aspirationBoost += 0.04;
-        }
+        let archetypeBoost = archetypeSectors.includes(cSec) ? 5 : 0;
 
-        // 6. Optional TAMANNA Aptitude Fit (only if actually taken)
-        let aptFit = 0;
-        if (hasTamanna) {
-          let aptScore = 0, aptWeight = 0;
-          if (career.aptitude && typeof career.aptitude === "object") {
-            Object.entries(career.aptitude).forEach(([domain, w]) => {
-              const directVal = aptitude[domain] || aptitude[`TAMANNA_${domain.toUpperCase()}`] || 50;
-              aptScore += (directVal / 100) * w;
-              aptWeight += w;
-            });
-          }
-          aptFit = aptWeight ? aptScore / aptWeight : 0.70;
-        }
+        // 6. Dynamic Composite Fit & Weighting Formula
+        let fit = 50;
+        let breakdown = {};
 
-        // 7. Dynamic Composite Fit Calculation
-        let fit;
-        if (hasTamanna) {
-          fit = interestFit * 0.55 + aptFit * 0.25 + sectorBoost + archetypeBoost + tagBoost + aspirationBoost;
+        if (hasTamanna && hasOcean) {
+          // Group 3: 3-Pronged Comprehensive Model
+          // RIASEC 35%, TAMANNA 25%, OCEAN 25%, Stream 15%
+          fit = (riasecPct * 0.35) + (aptitudePct * 0.25) + (oceanPct * 0.25) + (streamPct * 0.15) + tagBoost + archetypeBoost;
+          breakdown = {
+            riasecPct,
+            aptitudePct,
+            oceanPct,
+            streamPct,
+            riasecWeight: "35%",
+            aptitudeWeight: "25%",
+            oceanWeight: "25%",
+            streamWeight: "15%",
+            formula: "35% RIASEC + 25% Aptitude + 25% OCEAN + 15% Stream"
+          };
+        } else if (hasTamanna) {
+          // Group 2: Interest + Aptitude
+          // RIASEC 50%, TAMANNA 35%, Stream 15%
+          fit = (riasecPct * 0.50) + (aptitudePct * 0.35) + (streamPct * 0.15) + tagBoost + archetypeBoost;
+          breakdown = {
+            riasecPct,
+            aptitudePct,
+            oceanPct: null,
+            streamPct,
+            riasecWeight: "50%",
+            aptitudeWeight: "35%",
+            oceanWeight: "0%",
+            streamWeight: "15%",
+            formula: "50% RIASEC + 35% Aptitude + 15% Stream"
+          };
         } else {
-          // When only Tier 1 is completed: weight RIASEC interest fit heavily (80%) + profile boosts
-          fit = interestFit * 0.80 + sectorBoost + archetypeBoost + tagBoost + aspirationBoost + 0.05;
+          // Group 1: Foundation RIASEC Interest
+          // RIASEC 70%, Stream 15%, Passion/Tags 15%
+          fit = (riasecPct * 0.70) + (streamPct * 0.15) + (tagBoost * 1.5) + (archetypeBoost * 1.5) + 5;
+          breakdown = {
+            riasecPct,
+            aptitudePct: null,
+            oceanPct: null,
+            streamPct,
+            riasecWeight: "70%",
+            aptitudeWeight: "0%",
+            oceanWeight: "0%",
+            streamWeight: "15%",
+            formula: "70% Holland RIASEC + 15% Stream + 15% Personal Passions"
+          };
         }
 
-        fit = Math.max(0.40, Math.min(0.98, fit));
-        const pct = Math.round(fit * 100);
+        fit = Math.max(35, Math.min(99, Math.round(fit)));
+        breakdown.overallPct = fit;
 
-        // Explainable Reasons
-        const reasons = [];
-        let cleanReasonText = "High vocational affinity with your personality profile.";
-        if (career.traits) {
-          const rawItems = career.traits
-            .replace(/\b([a-zA-Z0-9]+)\s*•\s*([a-zA-Z0-9]+)\b/g, "$1-$2")
-            .split(/[\r\n]+|•|\.n|n\s*•/)
-            .map((s) => s.trim().replace(/^n\s*/, ""))
-            .filter((s) => s.length > 8);
-          if (rawItems.length > 0) {
-            cleanReasonText = rawItems[0].replace(/n$/, "").trim();
-            if (!cleanReasonText.endsWith(".")) cleanReasonText += ".";
+        // Structured Explainable Reasons
+        const reasons = [
+          {
+            type: "interest",
+            title: `Holland Code Fit (${riasecPct}%)`,
+            text: riasecReason,
           }
+        ];
+
+        if (hasTamanna) {
+          reasons.push({
+            type: "aptitude",
+            title: `Cognitive Aptitude (${aptitudePct}%)`,
+            text: aptitudeReason,
+          });
         }
 
-        if (typeof career.riasec === "string" && career.riasec.length > 0) {
+        if (hasOcean) {
           reasons.push({
-            type: "interest",
-            title: `Holland Code Fit: ${career.riasec.split("").join(" + ")}`,
-            text: cleanReasonText,
-          });
-        } else if (career.riasec && typeof career.riasec === "object") {
-          const rKeys = Object.keys(career.riasec).slice(0, 3);
-          reasons.push({
-            type: "interest",
-            title: `Holland Code Fit: ${rKeys.join(" + ")}`,
-            text: cleanReasonText,
+            type: "personality",
+            title: `Personality Dynamics (${oceanPct}%)`,
+            text: oceanReason,
           });
         }
-        if (streamInfo.primary && streamInfo.primary.includes(cSec)) {
-          reasons.push({
-            type: "stream",
-            title: "Stream Synergy",
-            text: `Directly aligns with your ${studentStream} curriculum and technical career pathway.`,
-          });
-        }
+
+        reasons.push({
+          type: "stream",
+          title: `Academic Synergy (${streamPct}%)`,
+          text: streamReason,
+        });
+
         if (matchedTagLabels.length > 0) {
           reasons.push({
             type: "tags",
-            title: "Interest Tag Match",
-            text: `Matches your passions: ${matchedTagLabels.slice(0, 3).join(", ")}`,
+            title: "Passions & Interests",
+            text: `Matches your declared hobbies: ${matchedTagLabels.slice(0, 3).join(", ")}.`,
           });
         }
 
-        return { ...career, fit: pct, reasons };
+        return {
+          ...career,
+          fit,
+          matchBreakdown: breakdown,
+          reasons
+        };
       })
       .sort((a, b) => b.fit - a.fit);
   },
 };
-

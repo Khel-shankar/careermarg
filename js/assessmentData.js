@@ -17,7 +17,10 @@ const LIKERT_5 = [
   { id: "5", text: "Strongly Agree", textHi: "पूरी तरह सहमत" },
 ];
 
-const RIASEC_OPTIONS = LIKERT_5;
+const RIASEC_OPTIONS = [
+  { id: "like", text: "Like (Interested)", textHi: "पसंद है (रुचि है)", icon: "👍" },
+  { id: "dislike", text: "Dislike (Not Interested)", textHi: "नापसंद है (रुचि नहीं है)", icon: "👎" }
+];
 
 const DISHA_ASSESSMENT_TRAITS = {
   // RIASEC Holland Code Traits
@@ -264,7 +267,7 @@ const DISHA_ALL_QUESTIONS = [
     traitTitleHi: "व्यावहारिक (डूअर्स)",
     questionText: "I like to work on cars",
     questionTextHi: "मुझे कारों, गाड़ियों और मैकेनिकल उपकरणों पर काम करना पसंद है।",
-    type: "likert_5",
+    type: "binary_choice",
     options: RIASEC_OPTIONS,
   },
   {
@@ -278,7 +281,7 @@ const DISHA_ALL_QUESTIONS = [
     traitTitleHi: "खोजी / विश्लेषणात्मक",
     questionText: "I like to do puzzles",
     questionTextHi: "मुझे पहेलियाँ, तार्किक पज़ल्स और दिमागी चुनौतियाँ हल करना पसंद है।",
-    type: "likert_5",
+    type: "binary_choice",
     options: RIASEC_OPTIONS,
   },
   {
@@ -292,7 +295,7 @@ const DISHA_ALL_QUESTIONS = [
     traitTitleHi: "रचनात्मक / कलात्मक",
     questionText: "I am good at working independently",
     questionTextHi: "मैं स्वतंत्र रूप से और अपनी रचनात्मक सोच के साथ काम करने में कुशल हूँ।",
-    type: "likert_5",
+    type: "binary_choice",
     options: RIASEC_OPTIONS,
   },
   {
@@ -306,7 +309,7 @@ const DISHA_ALL_QUESTIONS = [
     traitTitleHi: "सामाजिक / सहायक",
     questionText: "I like to work in teams",
     questionTextHi: "मुझे टीम में मिलकर काम करना और दूसरों के साथ सहयोग करना पसंद है।",
-    type: "likert_5",
+    type: "binary_choice",
     options: RIASEC_OPTIONS,
   },
   {
@@ -320,7 +323,7 @@ const DISHA_ALL_QUESTIONS = [
     traitTitleHi: "उद्यमी / मार्गदर्शक",
     questionText: "I am an ambitious person, I set goals for myself",
     questionTextHi: "मैं एक महत्वाकांक्षी व्यक्ति हूँ और अपने लिए बड़े लक्ष्य निर्धारित करता/करती हूँ।",
-    type: "likert_5",
+    type: "binary_choice",
     options: RIASEC_OPTIONS,
   },
   {
@@ -334,7 +337,7 @@ const DISHA_ALL_QUESTIONS = [
     traitTitleHi: "संगठनात्मक / व्यवस्थित",
     questionText: "I like to organize things (files, desks/offices)",
     questionTextHi: "मुझे चीजों को व्यवस्थित और सुव्यवस्थित रखना पसंद है (जैसे फाइलें, डेस्क और ऑफिस)।",
-    type: "likert_5",
+    type: "binary_choice",
     options: RIASEC_OPTIONS,
   },
   {
@@ -348,7 +351,7 @@ const DISHA_ALL_QUESTIONS = [
     traitTitleHi: "व्यावहारिक (डूअर्स)",
     questionText: "I like to build things",
     questionTextHi: "मुझे अपने हाथों से नई चीजें और संरचनाएं बनाना पसंद है।",
-    type: "likert_5",
+    type: "binary_choice",
     options: RIASEC_OPTIONS,
   },
   {
@@ -362,7 +365,7 @@ const DISHA_ALL_QUESTIONS = [
     traitTitleHi: "रचनात्मक / कलात्मक",
     questionText: "I like to read about art and music",
     questionTextHi: "मुझे कला, चित्रकला, साहित्य और संगीत के बारे में पढ़ना व जानना पसंद है।",
-    type: "likert_5",
+    type: "binary_choice",
     options: RIASEC_OPTIONS,
   },
   {
@@ -376,7 +379,7 @@ const DISHA_ALL_QUESTIONS = [
     traitTitleHi: "संगठनात्मक / व्यवस्थित",
     questionText: "I like to have clear instructions to follow",
     questionTextHi: "मुझे काम करने के लिए स्पष्ट नियम और तय निर्देशों का पालन करना पसंद है।",
-    type: "likert_5",
+    type: "binary_choice",
     options: RIASEC_OPTIONS,
   },
   {
@@ -390,7 +393,7 @@ const DISHA_ALL_QUESTIONS = [
     traitTitleHi: "उद्यमी / मार्गदर्शक",
     questionText: "I like to try to influence or persuade people",
     questionTextHi: "मुझे लोगों को प्रेरित करना या अपनी बात से सहमत कराना पसंद है।",
-    type: "likert_5",
+    type: "binary_choice",
     options: RIASEC_OPTIONS,
   },
   {
@@ -404,7 +407,7 @@ const DISHA_ALL_QUESTIONS = [
     traitTitleHi: "खोजी / विश्लेषणात्मक",
     questionText: "I like to do experiments",
     questionTextHi: "मुझे वैज्ञानिक प्रयोग करना और नए तथ्यों की खोज करना पसंद है।",
-    type: "likert_5",
+    type: "binary_choice",
     options: RIASEC_OPTIONS,
   },
   {
@@ -418,7 +421,7 @@ const DISHA_ALL_QUESTIONS = [
     traitTitleHi: "सामाजिक / सहायक",
     questionText: "I like to teach or train people",
     questionTextHi: "मुझे दूसरों को नई चीजें सिखाना, पढ़ाना या ट्रेनिंग देना पसंद है।",
-    type: "likert_5",
+    type: "binary_choice",
     options: RIASEC_OPTIONS,
   },
   {
@@ -432,7 +435,7 @@ const DISHA_ALL_QUESTIONS = [
     traitTitleHi: "सामाजिक / सहायक",
     questionText: "I like trying to help people solve their problems",
     questionTextHi: "मुझे लोगों की व्यक्तिगत या सामाजिक समस्याओं को सुलझाने में मदद करना पसंद है।",
-    type: "likert_5",
+    type: "binary_choice",
     options: RIASEC_OPTIONS,
   },
   {
@@ -446,7 +449,7 @@ const DISHA_ALL_QUESTIONS = [
     traitTitleHi: "व्यावहारिक (डूअर्स)",
     questionText: "I like to take care of animals",
     questionTextHi: "मुझे पशु-पक्षियों, प्रकृति और जानवरों की देखभाल करना पसंद है।",
-    type: "likert_5",
+    type: "binary_choice",
     options: RIASEC_OPTIONS,
   },
   {
@@ -460,7 +463,7 @@ const DISHA_ALL_QUESTIONS = [
     traitTitleHi: "संगठनात्मक / व्यवस्थित",
     questionText: "I wouldn't mind working 8 hours per day in an office",
     questionTextHi: "मुझे ऑफिस में बैठकर रोजाना 8 घंटे संरचित काम करने में कोई झिझक नहीं है।",
-    type: "likert_5",
+    type: "binary_choice",
     options: RIASEC_OPTIONS,
   },
   {
@@ -474,7 +477,7 @@ const DISHA_ALL_QUESTIONS = [
     traitTitleHi: "उद्यमी / मार्गदर्शक",
     questionText: "I like selling things",
     questionTextHi: "मुझे सामान या आइडियाज बेचना और व्यापारिक सौदे करना पसंद है।",
-    type: "likert_5",
+    type: "binary_choice",
     options: RIASEC_OPTIONS,
   },
   {
@@ -488,7 +491,7 @@ const DISHA_ALL_QUESTIONS = [
     traitTitleHi: "रचनात्मक / कलात्मक",
     questionText: "I enjoy creative writing",
     questionTextHi: "मुझे रचनात्मक लेखन, कहानियां, कविताएं या ब्लॉग लिखना पसंद है।",
-    type: "likert_5",
+    type: "binary_choice",
     options: RIASEC_OPTIONS,
   },
   {
@@ -502,7 +505,7 @@ const DISHA_ALL_QUESTIONS = [
     traitTitleHi: "खोजी / विश्लेषणात्मक",
     questionText: "I enjoy science",
     questionTextHi: "मुझे विज्ञान, अनुसंधान और नई टेक्नोलॉजी की गहरी समझ में रुचि है।",
-    type: "likert_5",
+    type: "binary_choice",
     options: RIASEC_OPTIONS,
   },
   {
@@ -516,7 +519,7 @@ const DISHA_ALL_QUESTIONS = [
     traitTitleHi: "उद्यमी / मार्गदर्शक",
     questionText: "I am quick to take on new responsibilities",
     questionTextHi: "मैं नई जिम्मेदारियां और लीडरशिप की भूमिकाएं लेने में तत्पर रहता/रहती हूँ।",
-    type: "likert_5",
+    type: "binary_choice",
     options: RIASEC_OPTIONS,
   },
   {
@@ -530,7 +533,7 @@ const DISHA_ALL_QUESTIONS = [
     traitTitleHi: "सामाजिक / सहायक",
     questionText: "I am interested in healing people",
     questionTextHi: "मुझे बीमार या जरूरतमंद लोगों की चिकित्सा व स्वास्थ्य सुधार में मदद करने में रुचि है।",
-    type: "likert_5",
+    type: "binary_choice",
     options: RIASEC_OPTIONS,
   },
   {
@@ -544,7 +547,7 @@ const DISHA_ALL_QUESTIONS = [
     traitTitleHi: "खोजी / विश्लेषणात्मक",
     questionText: "I enjoy trying to figure out how things work",
     questionTextHi: "मुझे यह समझना और विश्लेषण करना पसंद है कि मशीनें और प्रणालियाँ अंदर से कैसे काम करती हैं।",
-    type: "likert_5",
+    type: "binary_choice",
     options: RIASEC_OPTIONS,
   },
   {
@@ -558,7 +561,7 @@ const DISHA_ALL_QUESTIONS = [
     traitTitleHi: "व्यावहारिक (डूअर्स)",
     questionText: "I like putting things together or assembling things",
     questionTextHi: "मुझे पार्ट्स को जोड़ना, असेंबल करना और टूटे हुए उपकरणों को ठीक करना पसंद है।",
-    type: "likert_5",
+    type: "binary_choice",
     options: RIASEC_OPTIONS,
   },
   {
@@ -572,7 +575,7 @@ const DISHA_ALL_QUESTIONS = [
     traitTitleHi: "रचनात्मक / कलात्मक",
     questionText: "I am a creative person",
     questionTextHi: "मैं एक अत्यंत रचनात्मक और कल्पनाशील व्यक्ति हूँ।",
-    type: "likert_5",
+    type: "binary_choice",
     options: RIASEC_OPTIONS,
   },
   {
@@ -586,7 +589,7 @@ const DISHA_ALL_QUESTIONS = [
     traitTitleHi: "संगठनात्मक / व्यवस्थित",
     questionText: "I pay attention to details",
     questionTextHi: "मैं हर काम में छोटी-छोटी बारीकियों और शुद्धता पर विशेष ध्यान देता/देती हूँ।",
-    type: "likert_5",
+    type: "binary_choice",
     options: RIASEC_OPTIONS,
   },
   {
@@ -600,7 +603,7 @@ const DISHA_ALL_QUESTIONS = [
     traitTitleHi: "संगठनात्मक / व्यवस्थित",
     questionText: "I like to do filing or typing",
     questionTextHi: "मुझे फाइलों का प्रबंधन, टाइपिंग और डेटा का रिकॉर्ड रखना पसंद है।",
-    type: "likert_5",
+    type: "binary_choice",
     options: RIASEC_OPTIONS,
   },
   {
@@ -614,7 +617,7 @@ const DISHA_ALL_QUESTIONS = [
     traitTitleHi: "खोजी / विश्लेषणात्मक",
     questionText: "I like to analyze things (problems/situations)",
     questionTextHi: "मुझे जटिल समस्याओं और डेटा का गहन तार्किक विश्लेषण करना पसंद है।",
-    type: "likert_5",
+    type: "binary_choice",
     options: RIASEC_OPTIONS,
   },
   {
@@ -628,7 +631,7 @@ const DISHA_ALL_QUESTIONS = [
     traitTitleHi: "रचनात्मक / कलात्मक",
     questionText: "I like to play instruments or sing",
     questionTextHi: "मुझे संगीत वाद्ययंत्र बजाना, गाना गाना या धुनें बनाना पसंद है।",
-    type: "likert_5",
+    type: "binary_choice",
     options: RIASEC_OPTIONS,
   },
   {
@@ -642,7 +645,7 @@ const DISHA_ALL_QUESTIONS = [
     traitTitleHi: "सामाजिक / सहायक",
     questionText: "I enjoy learning about other cultures",
     questionTextHi: "मुझे विभिन्न संस्कृतियों, परंपराओं और समाजों के बारे में जानना व सीखना पसंद है।",
-    type: "likert_5",
+    type: "binary_choice",
     options: RIASEC_OPTIONS,
   },
   {
@@ -656,7 +659,7 @@ const DISHA_ALL_QUESTIONS = [
     traitTitleHi: "उद्यमी / मार्गदर्शक",
     questionText: "I would like to start my own business",
     questionTextHi: "मैं भविष्य में अपना खुद का व्यवसाय या उद्यम (Startup) शुरू करना चाहता/चाहती हूँ।",
-    type: "likert_5",
+    type: "binary_choice",
     options: RIASEC_OPTIONS,
   },
   {
@@ -670,7 +673,7 @@ const DISHA_ALL_QUESTIONS = [
     traitTitleHi: "व्यावहारिक (डूअर्स)",
     questionText: "I like to cook",
     questionTextHi: "मुझे खाना बनाना और पाक-कला के नए प्रयोग करना पसंद है।",
-    type: "likert_5",
+    type: "binary_choice",
     options: RIASEC_OPTIONS,
   },
   {
@@ -684,7 +687,7 @@ const DISHA_ALL_QUESTIONS = [
     traitTitleHi: "रचनात्मक / कलात्मक",
     questionText: "I like acting in plays",
     questionTextHi: "मुझे नाटकों, मंच प्रस्तुतियों या फिल्मों में अभिनय करना पसंद है।",
-    type: "likert_5",
+    type: "binary_choice",
     options: RIASEC_OPTIONS,
   },
   {
@@ -698,7 +701,7 @@ const DISHA_ALL_QUESTIONS = [
     traitTitleHi: "व्यावहारिक (डूअर्स)",
     questionText: "I am a practical person",
     questionTextHi: "मैं एक यथार्थवादी और व्यावहारिक व्यक्ति हूँ जो ठोस परिणामों पर विश्वास करता है।",
-    type: "likert_5",
+    type: "binary_choice",
     options: RIASEC_OPTIONS,
   },
   {
@@ -712,7 +715,7 @@ const DISHA_ALL_QUESTIONS = [
     traitTitleHi: "खोजी / विश्लेषणात्मक",
     questionText: "I like working with numbers or charts",
     questionTextHi: "मुझे संख्याओं, ग्राफ्स और गणितीय डेटा के साथ काम करना पसंद है।",
-    type: "likert_5",
+    type: "binary_choice",
     options: RIASEC_OPTIONS,
   },
   {
@@ -726,7 +729,7 @@ const DISHA_ALL_QUESTIONS = [
     traitTitleHi: "सामाजिक / सहायक",
     questionText: "I like to get into discussions about issues",
     questionTextHi: "मुझे सामाजिक और समकालीन मुद्दों पर विचार-विमर्श व सार्थक चर्चा करना पसंद है।",
-    type: "likert_5",
+    type: "binary_choice",
     options: RIASEC_OPTIONS,
   },
   {
@@ -740,7 +743,7 @@ const DISHA_ALL_QUESTIONS = [
     traitTitleHi: "संगठनात्मक / व्यवस्थित",
     questionText: "I am good at keeping records of my work",
     questionTextHi: "मैं अपने काम, खर्च और समय-सारणी का सटीक रिकॉर्ड रखने में माहिर हूँ।",
-    type: "likert_5",
+    type: "binary_choice",
     options: RIASEC_OPTIONS,
   },
   {
@@ -754,7 +757,7 @@ const DISHA_ALL_QUESTIONS = [
     traitTitleHi: "उद्यमी / मार्गदर्शक",
     questionText: "I like to lead",
     questionTextHi: "मुझे किसी समूह या प्रोजेक्ट का नेतृत्व करना और दिशा दिखाना पसंद है।",
-    type: "likert_5",
+    type: "binary_choice",
     options: RIASEC_OPTIONS,
   },
   {
@@ -768,7 +771,7 @@ const DISHA_ALL_QUESTIONS = [
     traitTitleHi: "व्यावहारिक (डूअर्स)",
     questionText: "I like working outdoors",
     questionTextHi: "मुझे खुली प्रकृति, मैदानों और आउटडोर वातावरण में काम करना पसंद है।",
-    type: "likert_5",
+    type: "binary_choice",
     options: RIASEC_OPTIONS,
   },
   {
@@ -782,7 +785,7 @@ const DISHA_ALL_QUESTIONS = [
     traitTitleHi: "संगठनात्मक / व्यवस्थित",
     questionText: "I would like to work in an office",
     questionTextHi: "मुझे एक सुव्यवस्थित और शांत कॉर्पोरेट ऑफिस में काम करना पसंद है।",
-    type: "likert_5",
+    type: "binary_choice",
     options: RIASEC_OPTIONS,
   },
   {
@@ -796,7 +799,7 @@ const DISHA_ALL_QUESTIONS = [
     traitTitleHi: "खोजी / विश्लेषणात्मक",
     questionText: "I'm good at math",
     questionTextHi: "मेरी गणितीय और तार्किक गणना क्षमता बहुत अच्छी है।",
-    type: "likert_5",
+    type: "binary_choice",
     options: RIASEC_OPTIONS,
   },
   {
@@ -810,7 +813,7 @@ const DISHA_ALL_QUESTIONS = [
     traitTitleHi: "सामाजिक / सहायक",
     questionText: "I like helping people",
     questionTextHi: "मुझे जरूरतमंद लोगों की मदद और समाज सेवा करने में आत्मसंतुष्टि मिलती है।",
-    type: "likert_5",
+    type: "binary_choice",
     options: RIASEC_OPTIONS,
   },
   {
@@ -824,7 +827,7 @@ const DISHA_ALL_QUESTIONS = [
     traitTitleHi: "रचनात्मक / कलात्मक",
     questionText: "I like to draw",
     questionTextHi: "मुझे रेखाचित्र (Drawing), पेंटिंग या डिजाइन बनाना पसंद है।",
-    type: "likert_5",
+    type: "binary_choice",
     options: RIASEC_OPTIONS,
   },
   {
@@ -838,7 +841,7 @@ const DISHA_ALL_QUESTIONS = [
     traitTitleHi: "उद्यमी / मार्गदर्शक",
     questionText: "I like to give speeches",
     questionTextHi: "मुझे सार्वजनिक भाषण देना और लोगों के सामने अपनी बात प्रभावशाली ढंग से रखना पसंद है।",
-    type: "likert_5",
+    type: "binary_choice",
     options: RIASEC_OPTIONS,
   },
 
@@ -854,7 +857,7 @@ const DISHA_ALL_QUESTIONS = [
     traitTitleHi: "व्यावहारिक (डूअर्स)",
     questionText: "I like to work on cars and mechanical machines",
     questionTextHi: "मुझे कारों, गाड़ियों और मैकेनिकल मशीनों पर काम करना पसंद है।",
-    type: "likert_5",
+    type: "binary_choice",
     options: RIASEC_OPTIONS,
   },
   {
@@ -868,7 +871,7 @@ const DISHA_ALL_QUESTIONS = [
     traitTitleHi: "व्यावहारिक (डूअर्स)",
     questionText: "I like to build things with my hands",
     questionTextHi: "मुझे अपने हाथों से नई चीजें बनाना और निर्माण कार्य करना पसंद है।",
-    type: "likert_5",
+    type: "binary_choice",
     options: RIASEC_OPTIONS,
   },
   {
@@ -882,7 +885,7 @@ const DISHA_ALL_QUESTIONS = [
     traitTitleHi: "व्यावहारिक (डूअर्स)",
     questionText: "I like to take care of animals and work outdoors",
     questionTextHi: "मुझे पशु-पक्षियों की देखभाल करना और आउटडोर वातावरण में काम करना पसंद है।",
-    type: "likert_5",
+    type: "binary_choice",
     options: RIASEC_OPTIONS,
   },
   {
@@ -896,7 +899,7 @@ const DISHA_ALL_QUESTIONS = [
     traitTitleHi: "व्यावहारिक (डूअर्स)",
     questionText: "I like assembling or repairing devices and gadgets",
     questionTextHi: "मुझे पुर्जों को जोड़ना, असेंबल करना और टूटे हुए उपकरणों को ठीक करना पसंद है।",
-    type: "likert_5",
+    type: "binary_choice",
     options: RIASEC_OPTIONS,
   },
   {
@@ -910,7 +913,7 @@ const DISHA_ALL_QUESTIONS = [
     traitTitleHi: "खोजी / विश्लेषणात्मक",
     questionText: "I like to do puzzles and brain teasers",
     questionTextHi: "मुझे पहेलियाँ, तार्किक पज़ल्स और दिमागी चुनौतियाँ हल करना पसंद है।",
-    type: "likert_5",
+    type: "binary_choice",
     options: RIASEC_OPTIONS,
   },
   {
@@ -924,7 +927,7 @@ const DISHA_ALL_QUESTIONS = [
     traitTitleHi: "खोजी / विश्लेषणात्मक",
     questionText: "I like to do scientific experiments and discoveries",
     questionTextHi: "मुझे वैज्ञानिक प्रयोग करना और नए वैज्ञानिक तथ्यों की खोज करना पसंद है।",
-    type: "likert_5",
+    type: "binary_choice",
     options: RIASEC_OPTIONS,
   },
   {
@@ -938,7 +941,7 @@ const DISHA_ALL_QUESTIONS = [
     traitTitleHi: "खोजी / विश्लेषणात्मक",
     questionText: "I enjoy science and exploring complex questions",
     questionTextHi: "मुझे विज्ञान, अनुसंधान और नई टेक्नोलॉजी की गहरी समझ में रुचि है।",
-    type: "likert_5",
+    type: "binary_choice",
     options: RIASEC_OPTIONS,
   },
   {
@@ -952,7 +955,7 @@ const DISHA_ALL_QUESTIONS = [
     traitTitleHi: "खोजी / विश्लेषणात्मक",
     questionText: "I enjoy figuring out how complicated systems work",
     questionTextHi: "मुझे यह समझना और विश्लेषण करना पसंद है कि जटिल प्रणालियाँ अंदर से कैसे काम करती हैं।",
-    type: "likert_5",
+    type: "binary_choice",
     options: RIASEC_OPTIONS,
   },
   {
@@ -966,7 +969,7 @@ const DISHA_ALL_QUESTIONS = [
     traitTitleHi: "रचनात्मक / कलात्मक",
     questionText: "I am good at creative and independent work",
     questionTextHi: "मैं स्वतंत्र रूप से और अपनी रचनात्मक सोच के साथ काम करने में कुशल हूँ।",
-    type: "likert_5",
+    type: "binary_choice",
     options: RIASEC_OPTIONS,
   },
   {
@@ -980,7 +983,7 @@ const DISHA_ALL_QUESTIONS = [
     traitTitleHi: "रचनात्मक / कलात्मक",
     questionText: "I like to read about art, music, and design",
     questionTextHi: "मुझे कला, चित्रकला, साहित्य और संगीत के बारे में पढ़ना व जानना पसंद है।",
-    type: "likert_5",
+    type: "binary_choice",
     options: RIASEC_OPTIONS,
   },
   {
@@ -994,7 +997,7 @@ const DISHA_ALL_QUESTIONS = [
     traitTitleHi: "रचनात्मक / कलात्मक",
     questionText: "I enjoy creative writing, stories, and expressions",
     questionTextHi: "मुझे रचनात्मक लेखन, कहानियां, कविताएं या ब्लॉग लिखना पसंद है।",
-    type: "likert_5",
+    type: "binary_choice",
     options: RIASEC_OPTIONS,
   },
   {
@@ -1008,7 +1011,7 @@ const DISHA_ALL_QUESTIONS = [
     traitTitleHi: "रचनात्मक / कलात्मक",
     questionText: "I am an imaginative and artistic creator",
     questionTextHi: "मैं एक अत्यंत रचनात्मक और कल्पनाशील व्यक्ति हूँ जो नए विचार गढ़ता है।",
-    type: "likert_5",
+    type: "binary_choice",
     options: RIASEC_OPTIONS,
   },
   {
@@ -1022,7 +1025,7 @@ const DISHA_ALL_QUESTIONS = [
     traitTitleHi: "सामाजिक / सहायक",
     questionText: "I like to work in collaborative teams",
     questionTextHi: "मुझे टीम में मिलकर काम करना और दूसरों के साथ सहयोग करना पसंद है।",
-    type: "likert_5",
+    type: "binary_choice",
     options: RIASEC_OPTIONS,
   },
   {
@@ -1036,7 +1039,7 @@ const DISHA_ALL_QUESTIONS = [
     traitTitleHi: "सामाजिक / सहायक",
     questionText: "I like to teach, train, and guide students",
     questionTextHi: "मुझे दूसरों को नई चीजें सिखाना, पढ़ाना या ट्रेनिंग देना पसंद है।",
-    type: "likert_5",
+    type: "binary_choice",
     options: RIASEC_OPTIONS,
   },
   {
@@ -1050,7 +1053,7 @@ const DISHA_ALL_QUESTIONS = [
     traitTitleHi: "सामाजिक / सहायक",
     questionText: "I like trying to help people solve their life problems",
     questionTextHi: "मुझे लोगों की व्यक्तिगत या सामाजिक समस्याओं को सुलझाने में मदद करना पसंद है।",
-    type: "likert_5",
+    type: "binary_choice",
     options: RIASEC_OPTIONS,
   },
   {
@@ -1064,7 +1067,7 @@ const DISHA_ALL_QUESTIONS = [
     traitTitleHi: "सामाजिक / सहायक",
     questionText: "I am interested in healthcare, healing, and counseling",
     questionTextHi: "मुझे बीमार या जरूरतमंद लोगों की चिकित्सा, परामर्श व स्वास्थ्य सुधार में मदद करने में रुचि है।",
-    type: "likert_5",
+    type: "binary_choice",
     options: RIASEC_OPTIONS,
   },
   {
@@ -1078,7 +1081,7 @@ const DISHA_ALL_QUESTIONS = [
     traitTitleHi: "उद्यमी / मार्गदर्शक",
     questionText: "I am an ambitious person with big leadership goals",
     questionTextHi: "मैं एक महत्वाकांक्षी व्यक्ति हूँ और अपने लिए बड़े लक्ष्य निर्धारित करता/करती हूँ।",
-    type: "likert_5",
+    type: "binary_choice",
     options: RIASEC_OPTIONS,
   },
   {
@@ -1092,7 +1095,7 @@ const DISHA_ALL_QUESTIONS = [
     traitTitleHi: "उद्यमी / मार्गदर्शक",
     questionText: "I like to influence, lead, and persuade people",
     questionTextHi: "मुझे लोगों को प्रेरित करना, नेतृत्व करना और अपनी बात से सहमत कराना पसंद है।",
-    type: "likert_5",
+    type: "binary_choice",
     options: RIASEC_OPTIONS,
   },
   {
@@ -1106,7 +1109,7 @@ const DISHA_ALL_QUESTIONS = [
     traitTitleHi: "उद्यमी / मार्गदर्शक",
     questionText: "I like selling products, ideas, and negotiating deals",
     questionTextHi: "मुझे सामान या आइडियाज बेचना और व्यापारिक सौदे करना पसंद है।",
-    type: "likert_5",
+    type: "binary_choice",
     options: RIASEC_OPTIONS,
   },
   {
@@ -1120,7 +1123,7 @@ const DISHA_ALL_QUESTIONS = [
     traitTitleHi: "उद्यमी / मार्गदर्शक",
     questionText: "I am quick to take on new strategic responsibilities",
     questionTextHi: "मैं नई जिम्मेदारियां और लीडरशिप की भूमिकाएं लेने में हमेशा तत्पर रहता/रहती हूँ।",
-    type: "likert_5",
+    type: "binary_choice",
     options: RIASEC_OPTIONS,
   },
   {
@@ -1134,7 +1137,7 @@ const DISHA_ALL_QUESTIONS = [
     traitTitleHi: "संगठनात्मक / व्यवस्थित",
     questionText: "I like to organize files, desks, and databases",
     questionTextHi: "मुझे चीजों को व्यवस्थित और सुव्यवस्थित रखना पसंद है (जैसे फाइलें, डेस्क और ऑफिस)।",
-    type: "likert_5",
+    type: "binary_choice",
     options: RIASEC_OPTIONS,
   },
   {
@@ -1148,7 +1151,7 @@ const DISHA_ALL_QUESTIONS = [
     traitTitleHi: "संगठनात्मक / व्यवस्थित",
     questionText: "I like following clear rules and systematic workflows",
     questionTextHi: "मुझे काम करने के लिए स्पष्ट नियम और तय निर्देशों का पालन करना पसंद है।",
-    type: "likert_5",
+    type: "binary_choice",
     options: RIASEC_OPTIONS,
   },
   {
@@ -1162,7 +1165,7 @@ const DISHA_ALL_QUESTIONS = [
     traitTitleHi: "संगठनात्मक / व्यवस्थित",
     questionText: "I wouldn't mind working in a structured corporate office",
     questionTextHi: "मुझे ऑफिस में बैठकर रोजाना संरचित कार्य करने में कोई झिझक नहीं है।",
-    type: "likert_5",
+    type: "binary_choice",
     options: RIASEC_OPTIONS,
   },
   {
@@ -1176,7 +1179,7 @@ const DISHA_ALL_QUESTIONS = [
     traitTitleHi: "संगठनात्मक / व्यवस्थित",
     questionText: "I pay great attention to accuracy and fine details",
     questionTextHi: "मैं हर काम में छोटी-छोटी बारीकियों और शुद्धता पर विशेष ध्यान देता/देती हूँ।",
-    type: "likert_5",
+    type: "binary_choice",
     options: RIASEC_OPTIONS,
   },
 

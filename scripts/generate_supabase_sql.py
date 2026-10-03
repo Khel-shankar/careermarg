@@ -1,6 +1,8 @@
 import json
 import subprocess
+import os
 
+# Run node to extract all questions, sectors, and careers
 res = subprocess.run(
     ["node", "-e", """
     global.window = global;
@@ -9,7 +11,7 @@ res = subprocess.run(
     console.log(JSON.stringify({
         questions: global.DISHA_ALL_QUESTIONS || [],
         sectors: global.DISHA_CAREER_SECTORS || [],
-        careers: (global.DISHA_CAREER_DATABASE || []).slice(0, 300)
+        careers: global.DISHA_CAREER_DATABASE || []
     }));
     """],
     capture_output=True,
@@ -28,17 +30,11 @@ def esc(val):
     s = str(val).replace("'", "''")
     return f"'{s}'"
 
-# Create mapping of sector titles to icon & hindi
-sector_map = {}
-for s in raw_sectors:
-    sector_map[s.get('label', '')] = s
-    sector_map[s.get('id', '')] = s
-
-# Collect all distinct sector names from careers
-all_career_sectors = set()
-for c in careers:
-    sec = c.get('sector') or c.get('cluster') or 'IT, Software & AI'
-    all_career_sectors.add(sec)
+def json_esc(obj):
+    if obj is None:
+        return "'{}'::jsonb"
+    s = json.dumps(obj, ensure_ascii=False).replace("'", "''")
+    return f"'{s}'::jsonb"
 
 sql_lines = [
 """-- ============================================================================
@@ -47,10 +43,11 @@ sql_lines = [
 -- 1. users
 -- 2. student_assessment_sessions
 -- 3. student_trait_scores
--- 4. counselor_notes
--- 5. assessment_questions (126 Verified Bilingual Questions)
--- 6. career_sectors (Industry Sectors)
--- 7. careers (Curated Career Library)
+-- 4. student_career_matches
+-- 5. counselor_notes
+-- 6. assessment_questions (126 Verified Bilingual Questions)
+-- 7. career_sectors (Industry Sectors)
+-- 8. careers (Curated Career Library)
 -- ============================================================================
 
 -- 1. USERS TABLE
@@ -77,6 +74,7 @@ CREATE TABLE IF NOT EXISTS student_assessment_sessions (
     status VARCHAR(32) DEFAULT 'in_progress',
     progress_percent INT DEFAULT 0,
     responses_json JSONB DEFAULT '{}'::jsonb,
+    started_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     completed_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     UNIQUE(user_id, tier_code)
@@ -88,12 +86,26 @@ CREATE TABLE IF NOT EXISTS student_trait_scores (
     user_id VARCHAR(64) UNIQUE REFERENCES users(id) ON DELETE CASCADE,
     riasec_primary VARCHAR(10) DEFAULT NULL,
     riasec_secondary VARCHAR(10) DEFAULT NULL,
+    top_aptitudes JSONB DEFAULT '[]'::jsonb,
     all_scores_json JSONB DEFAULT '{}'::jsonb,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 4. COUNSELOR NOTES TABLE
+-- 4. STUDENT CAREER MATCHES TABLE
+CREATE TABLE IF NOT EXISTS student_career_matches (
+    id BIGSERIAL PRIMARY KEY,
+    user_id VARCHAR(64) REFERENCES users(id) ON DELETE CASCADE,
+    career_id VARCHAR(64) NOT NULL,
+    match_percent INT NOT NULL,
+    breakdown_json JSONB DEFAULT '{}'::jsonb,
+    reasons_json JSONB DEFAULT '[]'::jsonb,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(user_id, career_id)
+);
+
+-- 5. COUNSELOR NOTES TABLE
 CREATE TABLE IF NOT EXISTS counselor_notes (
     id BIGSERIAL PRIMARY KEY,
     counselor_id VARCHAR(64) REFERENCES users(id) ON DELETE CASCADE,
@@ -102,7 +114,7 @@ CREATE TABLE IF NOT EXISTS counselor_notes (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 5. ASSESSMENT QUESTIONS TABLE
+-- 6. ASSESSMENT QUESTIONS TABLE
 CREATE TABLE IF NOT EXISTS assessment_questions (
     id VARCHAR(64) PRIMARY KEY,
     tier_code VARCHAR(32) NOT NULL,
@@ -118,7 +130,7 @@ CREATE TABLE IF NOT EXISTS assessment_questions (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 6. CAREER SECTORS TABLE
+-- 7. CAREER SECTORS TABLE
 CREATE TABLE IF NOT EXISTS career_sectors (
     id VARCHAR(128) PRIMARY KEY,
     label VARCHAR(128) NOT NULL,
@@ -126,7 +138,7 @@ CREATE TABLE IF NOT EXISTS career_sectors (
     icon VARCHAR(32) DEFAULT '🌐'
 );
 
--- 7. CAREERS TABLE
+-- 8. CAREERS TABLE
 CREATE TABLE IF NOT EXISTS careers (
     id VARCHAR(64) PRIMARY KEY,
     sector_id VARCHAR(128) DEFAULT 'it_tech',
@@ -138,13 +150,21 @@ CREATE TABLE IF NOT EXISTS careers (
     description_hi TEXT NOT NULL,
     salary_range VARCHAR(64) DEFAULT '₹4 - ₹15 LPA',
     growth_outlook VARCHAR(64) DEFAULT 'High',
+    education TEXT DEFAULT '',
+    education_hi TEXT DEFAULT '',
+    entrance_exams JSONB DEFAULT '[]'::jsonb,
+    interest_tags JSONB DEFAULT '[]'::jsonb,
+    roadmap JSONB DEFAULT '[]'::jsonb,
+    ocean_traits JSONB DEFAULT '{}'::jsonb,
+    aptitude_reqs JSONB DEFAULT '{}'::jsonb,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- DISABLE RLS FOR ZERO-RESTRICTION CLOUD API SYNC
+-- DISABLE RLS FOR ZERO-RESTRICTION SEAMLESS API SYNC
 ALTER TABLE IF EXISTS users DISABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS student_assessment_sessions DISABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS student_trait_scores DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS student_career_matches DISABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS counselor_notes DISABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS assessment_questions DISABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS career_sectors DISABLE ROW LEVEL SECURITY;
@@ -176,71 +196,68 @@ for s in raw_sectors:
     icon = s.get('icon', '💼')
     sec_rows.append(f"({esc(sid)}, {esc(label)}, {esc(hi)}, {esc(icon)})")
 
-for sname in all_career_sectors:
-    if sname not in [s.get('id') for s in raw_sectors]:
-        matched = sector_map.get(sname, {})
-        hi = matched.get('hi', sname)
-        icon = matched.get('icon', '💼')
-        sec_rows.append(f"({esc(sname)}, {esc(sname)}, {esc(hi)}, {esc(icon)})")
-
-sql_lines.append("-- SEED CAREER SECTORS\nINSERT INTO career_sectors (id, label, hi, icon) VALUES\n" + ",\n".join(sec_rows) + "\nON CONFLICT (id) DO UPDATE SET label = EXCLUDED.label, hi = EXCLUDED.hi, icon = EXCLUDED.icon;\n")
+sql_lines.append(f"-- SEED CAREER SECTORS\nINSERT INTO career_sectors (id, label, hi, icon) VALUES\n" + ",\n".join(sec_rows) + "\nON CONFLICT (id) DO UPDATE SET label = EXCLUDED.label, hi = EXCLUDED.hi, icon = EXCLUDED.icon;\n")
 
 # Questions insert
 q_rows = []
 for q in questions:
-    qid = q.get('id', '')
+    qid = q.get('id')
     tier = q.get('tier', 'tier1_riasec')
-    trait = q.get('traitCode') or q.get('trait') or ''
+    trait = q.get('traitCode', 'R')
     submodule = q.get('submodule', '')
-    submodule_title = q.get('submoduleTitle', '')
-    submodule_title_hi = q.get('submoduleTitleHi', '')
-    text_en = q.get('textEn') or q.get('text') or ''
-    text_hi = q.get('textHi', '')
-    opts = json.dumps(q.get('options', []), ensure_ascii=False)
+    subTitle = q.get('submoduleTitle', '')
+    subTitleHi = q.get('submoduleTitleHi', '')
+    textEn = q.get('questionText') or q.get('textEn') or q.get('text') or ''
+    textHi = q.get('questionTextHi') or q.get('textHi') or ''
+    opts = q.get('options', [])
     qtype = q.get('type', 'likert_5')
-    correct_key = q.get('correctKey')
-    q_rows.append(f"({esc(qid)}, {esc(tier)}, {esc(trait)}, {esc(submodule)}, {esc(submodule_title)}, {esc(submodule_title_hi)}, {esc(text_en)}, {esc(text_hi)}, {esc(opts)}::jsonb, {esc(qtype)}, {esc(correct_key)})")
+    correctKey = q.get('correctKey')
+    
+    q_rows.append(
+        f"({esc(qid)}, {esc(tier)}, {esc(trait)}, {esc(submodule)}, {esc(subTitle)}, {esc(subTitleHi)}, {esc(textEn)}, {esc(textHi)}, {json_esc(opts)}, {esc(qtype)}, {esc(correctKey)})"
+    )
 
-sql_lines.append("-- SEED 126 BILINGUAL ASSESSMENT QUESTIONS\nINSERT INTO assessment_questions (id, tier_code, trait_code, submodule, submodule_title, submodule_title_hi, question_text_en, question_text_hi, options_json, type, correct_key) VALUES\n" + ",\n".join(q_rows) + """\nON CONFLICT (id) DO UPDATE SET
-    tier_code = EXCLUDED.tier_code,
-    trait_code = EXCLUDED.trait_code,
-    question_text_en = EXCLUDED.question_text_en,
-    question_text_hi = EXCLUDED.question_text_hi,
-    options_json = EXCLUDED.options_json;\n""")
+sql_lines.append(f"-- SEED 126 BILINGUAL ASSESSMENT QUESTIONS\nINSERT INTO assessment_questions (id, tier_code, trait_code, submodule, submodule_title, submodule_title_hi, question_text_en, question_text_hi, options_json, type, correct_key) VALUES\n" + ",\n".join(q_rows) + "\nON CONFLICT (id) DO UPDATE SET question_text_en = EXCLUDED.question_text_en, question_text_hi = EXCLUDED.question_text_hi, options_json = EXCLUDED.options_json;\n")
 
-# Careers insert
-car_rows = []
-for c in careers:
-    cid = c.get('id', '')
-    sector = c.get('sector') or c.get('cluster') or 'IT, Software & AI'
-    title = c.get('title', '')
-    title_hi = c.get('titleHi', title)
-    riasec = c.get('riasec', 'IRC')
-    stream = c.get('stream', 'any')
-    desc = c.get('description') or c.get('overview') or ''
-    desc_hi = c.get('descriptionHi') or c.get('overviewHi') or ''
-    salary = c.get('salaryRange', '₹4 - ₹15 LPA')
-    growth = c.get('growth', 'High')
-    car_rows.append(f"({esc(cid)}, {esc(sector)}, {esc(title)}, {esc(title_hi)}, {esc(riasec)}, {esc(stream)}, {esc(desc)}, {esc(desc_hi)}, {esc(salary)}, {esc(growth)})")
+# Careers insert (batch by 50)
+career_batches = []
+batch_size = 50
+for i in range(0, len(careers), batch_size):
+    chunk = careers[i:i + batch_size]
+    c_rows = []
+    for c in chunk:
+        cid = c.get('id')
+        sector_id = c.get('sectorId') or c.get('cluster') or 'it_tech'
+        title = c.get('title', '')
+        title_hi = c.get('hi') or c.get('titleHi') or title
+        riasec_code = c.get('riasec') if isinstance(c.get('riasec'), str) else "IRC"
+        stream = c.get('stream', 'any')
+        desc = c.get('overview') or c.get('blurb') or c.get('description') or ''
+        desc_hi = c.get('overviewHi') or c.get('hi') or desc
+        salary = c.get('salary') or c.get('salaryRange') or '₹4 - ₹15 LPA'
+        growth = c.get('growthOutlook') or 'High'
+        education = c.get('education') or c.get('educationPath') or ''
+        education_hi = c.get('educationHi') or ''
+        entrance_exams = c.get('entranceExams') or []
+        interest_tags = c.get('interestTags') or []
+        roadmap = c.get('roadmap') or []
+        ocean_traits = c.get('ocean') or {}
+        aptitude_reqs = c.get('aptitude') or {}
 
-sql_lines.append("-- SEED 300 CURATED CAREERS\nINSERT INTO careers (id, sector_id, title, title_hi, riasec_code, stream, description, description_hi, salary_range, growth_outlook) VALUES\n" + ",\n".join(car_rows) + """\nON CONFLICT (id) DO UPDATE SET
-    sector_id = EXCLUDED.sector_id,
-    title = EXCLUDED.title,
-    title_hi = EXCLUDED.title_hi,
-    riasec_code = EXCLUDED.riasec_code,
-    description = EXCLUDED.description,
-    description_hi = EXCLUDED.description_hi;\n""")
+        c_rows.append(
+            f"({esc(cid)}, {esc(sector_id)}, {esc(title)}, {esc(title_hi)}, {esc(riasec_code)}, {esc(stream)}, {esc(desc)}, {esc(desc_hi)}, {esc(salary)}, {esc(growth)}, {esc(education)}, {esc(education_hi)}, {json_esc(entrance_exams)}, {json_esc(interest_tags)}, {json_esc(roadmap)}, {json_esc(ocean_traits)}, {json_esc(aptitude_reqs)})"
+        )
+    
+    career_batches.append(
+        f"INSERT INTO careers (id, sector_id, title, title_hi, riasec_code, stream, description, description_hi, salary_range, growth_outlook, education, education_hi, entrance_exams, interest_tags, roadmap, ocean_traits, aptitude_reqs) VALUES\n" +
+        ",\n".join(c_rows) +
+        "\nON CONFLICT (id) DO UPDATE SET title = EXCLUDED.title, title_hi = EXCLUDED.title_hi, description = EXCLUDED.description, salary_range = EXCLUDED.salary_range;\n"
+    )
 
-sql_lines.append("""-- CONFIRM TOTAL POPULATED RECORDS
-SELECT 
-    (SELECT count(*) FROM users) as users_count,
-    (SELECT count(*) FROM assessment_questions) as questions_count,
-    (SELECT count(*) FROM career_sectors) as sectors_count,
-    (SELECT count(*) FROM careers) as careers_count;
-""")
+sql_lines.append(f"-- SEED {len(careers)} VERIFIED INDIAN CAREER PATHWAYS\n" + "\n".join(career_batches))
 
-full_sql = "\n".join(sql_lines)
-with open('database/supabase_setup.sql', 'w', encoding='utf-8') as f:
-    f.write(full_sql)
+output_sql = "\n".join(sql_lines)
+with open("database/supabase_setup.sql", "w", encoding="utf-8") as f:
+    f.write(output_sql)
 
-print(f"Successfully generated database/supabase_setup.sql ({len(full_sql)} bytes)")
+print(f"Successfully generated database/supabase_setup.sql with {len(questions)} questions and {len(careers)} careers! Total size: {len(output_sql)} characters.")

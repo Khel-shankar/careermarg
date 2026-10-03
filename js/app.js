@@ -215,9 +215,32 @@ const App = {
     this.toast(this.t("Comparison list cleared", "तुलना सूची खाली कर दी गई"));
   },
 
+  async fetchDatabaseData() {
+    try {
+      const qRes = await fetch("api/questions");
+      if (qRes.ok) {
+        const qJson = await qRes.json();
+        if (qJson.success && Array.isArray(qJson.questions) && qJson.questions.length > 0) {
+          window.DISHA_ALL_QUESTIONS = qJson.questions;
+        }
+      }
+    } catch (_) {}
+
+    try {
+      const cRes = await fetch("api/careers?limit=1000");
+      if (cRes.ok) {
+        const cJson = await cRes.json();
+        if (cJson.success && Array.isArray(cJson.careers) && cJson.careers.length > 0) {
+          window.DISHA_CAREER_DATABASE = cJson.careers;
+        }
+      }
+    } catch (_) {}
+  },
+
   init() {
     window.App = this;
     this.load();
+    this.fetchDatabaseData();
     const savedTheme = localStorage.getItem("careermarg_theme") || this.state.theme || "light";
     this.state.theme = savedTheme;
     document.documentElement.setAttribute("data-theme", savedTheme);
@@ -643,6 +666,14 @@ const App = {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return;
       const saved = JSON.parse(raw);
+      const cleanAnswers = {};
+      if (saved.tierAnswers && typeof saved.tierAnswers === "object") {
+        Object.entries(saved.tierAnswers).forEach(([k, v]) => {
+          if (v !== null && v !== undefined && v !== "" && v !== "NaN" && !Number.isNaN(v)) {
+            cleanAnswers[k] = v;
+          }
+        });
+      }
       this.state = {
         ...this.state,
         ...saved,
@@ -652,11 +683,17 @@ const App = {
         selectedSavedCareerId: null,
         savedCareers: Array.from(new Set(saved.savedCareers || [])),
         compareIds: Array.from(new Set(saved.compareIds || [])),
-        tierAnswers: saved.tierAnswers || {},
+        tierAnswers: cleanAnswers,
         completedTiers: saved.completedTiers || [],
         traitScores: saved.traitScores || {},
         activeTier: saved.activeTier || "tier1_riasec",
       };
+      if (window.MoineeScore && window.DISHA_ALL_QUESTIONS && Object.keys(cleanAnswers).length > 0) {
+        const computed = MoineeScore.scoreAllTiers(cleanAnswers, window.DISHA_ALL_QUESTIONS);
+        if (computed.traits && Object.keys(computed.traits).length > 0) {
+          this.state.traitScores = { ...this.state.traitScores, ...computed.traits };
+        }
+      }
       if (this.state.auth && this.state.auth.name && !this.state.profile.name) {
         this.state.profile.name = this.state.auth.name;
       }
@@ -1572,7 +1609,7 @@ const App = {
 
   tierProgress(tierId) {
     const questions = (window.DISHA_ALL_QUESTIONS || []).filter((q) => q.tier === tierId);
-    const total = questions.length || (tierId === "tier1_riasec" ? 24 : tierId === "tier2_tamanna" ? 28 : tierId === "tier3_ocean" ? 20 : 12);
+    const total = questions.length || (tierId === "tier1_riasec" ? 42 : tierId === "tier2_tamanna" ? 28 : tierId === "tier3_ocean" ? 20 : 12);
     const answered = questions.filter((q) => this.state.tierAnswers[q.id] !== undefined).length;
     const isCompletedFlag = (this.state.completedTiers || []).includes(tierId);
     const done = isCompletedFlag || (answered === total && total > 0);
@@ -4317,7 +4354,7 @@ const App = {
         pct: pPct < REQ_PCT ? 0 : t1.pct,
         locked: pPct < REQ_PCT,
         lockMsg: isHi ? `🔒 अनलॉक करने के लिए पहले विद्यार्थी प्रोफ़ाइल (कम से कम ${REQ_PCT}%) पूरी करें!` : `🔒 Please complete at least ${REQ_PCT}% of your Student Profile to unlock!`,
-        qCount: ft1.qCount || 24,
+        qCount: ft1.qCount || 42,
       },
       {
         id: "tier2_tamanna",
@@ -4656,13 +4693,14 @@ const App = {
             <!-- Options List -->
             <div class="quiz-options-list">
               ${currentQ.options
-                .map((opt) => {
+                .map((opt, oIdx) => {
                   const isSel = String(selectedAns) === String(opt.id);
+                  const iconOrNum = opt.icon || (opt.id === "like" ? "👍" : opt.id === "dislike" ? "👎" : (oIdx + 1));
                   return `
                     <button type="button" class="quiz-option-btn ${isSel ? "selected" : ""}" data-test-opt="${opt.id}">
-                      <span class="opt-circle-num">${opt.id}</span>
-                      <span style="flex:1">${isHi ? opt.textHi : opt.text}</span>
-                      ${isSel ? `<span style="font-size:1.1rem;color:var(--teal)">✓</span>` : ""}
+                      <span class="opt-circle-num">${iconOrNum}</span>
+                      <span style="flex:1;font-weight:700;">${isHi ? opt.textHi : opt.text}</span>
+                      ${isSel ? `<span style="font-size:1.15rem;color:var(--teal);font-weight:900;">✓</span>` : ""}
                     </button>`;
                 })
                 .join("")}
@@ -4927,22 +4965,25 @@ const App = {
     const computedTraits = (window.MoineeScore && window.DISHA_ALL_QUESTIONS)
       ? MoineeScore.scoreAllTiers(this.state.tierAnswers, window.DISHA_ALL_QUESTIONS)
       : {};
-    const ts = { ...this.state.traitScores, ...computedTraits };
+    const ts = { ...this.state.traitScores, ...(computedTraits.traits || computedTraits) };
 
     const completedTiers = this.state.completedTiers || [];
-    const ansKeys = Object.keys(this.state.tierAnswers || {});
+    const ansKeys = Object.keys(this.state.tierAnswers || {}).filter(k => {
+      const v = this.state.tierAnswers[k];
+      return v !== undefined && v !== null && v !== "" && !Number.isNaN(v);
+    });
 
-    const isTier1Done = completedTiers.includes("tier1_riasec") || ansKeys.some(k => k.startsWith("q_r_") || k.startsWith("q_i_") || k.startsWith("q_a_") || k.startsWith("q_s_") || k.startsWith("q_e_") || k.startsWith("q_c_") || k.startsWith("r") || k.startsWith("i_"));
-    const isTier2Done = completedTiers.includes("tier2_tamanna") || ansKeys.some(k => k.startsWith("tam_") || k.startsWith("t_") || k.startsWith("tamanna_"));
-    const isTier3Done = completedTiers.includes("tier3_ocean") || ansKeys.some(k => k.startsWith("ocean_") || k.startsWith("o_") || k.startsWith("c_") || k.startsWith("e_"));
+    const isTier1Done = completedTiers.includes("tier1_riasec") || ansKeys.some(k => k.startsWith("ria-") || k.startsWith("qria-") || k.startsWith("q_r_") || k.startsWith("q_i_") || k.startsWith("q_a_") || k.startsWith("q_s_") || k.startsWith("q_e_") || k.startsWith("q_c_") || k.startsWith("r") || k.startsWith("i_"));
+    const isTier2Done = completedTiers.includes("tier2_tamanna") || ansKeys.some(k => k.startsWith("tam-") || k.startsWith("tam_") || k.startsWith("t_") || k.startsWith("tamanna_"));
+    const isTier3Done = completedTiers.includes("tier3_ocean") || ansKeys.some(k => k.startsWith("oce-") || k.startsWith("ocean_") || k.startsWith("o_") || k.startsWith("c_") || k.startsWith("e_"));
 
     const riasecScores = {
-      R: ts.R != null ? ts.R : 72,
-      I: ts.I != null ? ts.I : 85,
-      A: ts.A != null ? ts.A : 60,
-      S: ts.S != null ? ts.S : 75,
-      E: ts.E != null ? ts.E : 80,
-      C: ts.C != null ? ts.C : 68,
+      R: ts.R !== undefined ? ts.R : 72,
+      I: ts.I !== undefined ? ts.I : 85,
+      A: ts.A !== undefined ? ts.A : 60,
+      S: ts.S !== undefined ? ts.S : 75,
+      E: ts.E !== undefined ? ts.E : 80,
+      C: ts.C !== undefined ? ts.C : 68,
     };
     const riasecLabels = ["Realistic (R)", "Investigative (I)", "Artistic (A)", "Social (S)", "Enterprising (E)", "Conventional (C)"];
     const riasecValues = [riasecScores.R, riasecScores.I, riasecScores.A, riasecScores.S, riasecScores.E, riasecScores.C];
@@ -5105,22 +5146,46 @@ const App = {
                 </div>
               </div>
             ` : isTier2Done ? `
-              <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(min(100%, 260px), 1fr));gap:16px;">
-                ${tamannaList
-                  .map((tam) => {
-                    const b = MoineeScore.band(tam.score);
-                    return `
-                      <div class="apt-bar-row">
-                        <div class="apt-bar-meta">
-                          <span>${tam.name}</span>
-                          <span style="color:${b.color}">${tam.score}% (${isHi ? b.hi : b.en})</span>
+              <div>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(min(100%, 260px), 1fr));gap:16px;margin-bottom:20px;">
+                  ${tamannaList
+                    .map((tam) => {
+                      const b = MoineeScore.band(tam.score);
+                      return `
+                        <div class="apt-bar-row">
+                          <div class="apt-bar-meta">
+                            <span>${tam.name}</span>
+                            <span style="color:${b.color}">${tam.score}% (${isHi ? b.hi : b.en})</span>
+                          </div>
+                          <div class="apt-bar-track">
+                            <div class="apt-bar-fill" style="width:${tam.score}%;background:${b.color}"></div>
+                          </div>
+                        </div>`;
+                    })
+                    .join("")}
+                </div>
+
+                <!-- Academic Stream Fit Breakdown -->
+                <div style="background:var(--field);padding:18px 20px;border-radius:14px;border:1.5px solid var(--edge);">
+                  <div style="font-size:0.95rem;font-weight:800;color:var(--ink);margin-bottom:12px;display:flex;align-items:center;gap:8px;">
+                    <span>🧭</span> ${this.t("Cognitive Stream Synergy Recommendations (Post-Class 10)", "संज्ञानात्मक स्ट्रीम चयन अनुशंसा (कक्षा 10 के बाद)")}
+                  </div>
+                  <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(min(100%, 280px), 1fr));gap:12px;">
+                    ${(MoineeScore.recommendStreams ? MoineeScore.recommendStreams(ts).slice(0, 3) : [])
+                      .map((st, sIdx) => `
+                        <div style="background:var(--card);padding:14px;border-radius:10px;border:1.5px solid ${sIdx === 0 ? "var(--teal)" : "var(--edge)"};position:relative;">
+                          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                            <strong style="font-size:0.92rem;color:var(--ink);">${st.icon} ${isHi ? st.titleHi : st.title}</strong>
+                            <span style="font-weight:800;font-size:0.85rem;color:${st.color};background:${st.color}18;padding:2px 8px;border-radius:12px;">${st.score}% ${this.t("Fit", "मैच")}</span>
+                          </div>
+                          <p style="margin:0 0 6px;font-size:0.8rem;color:var(--ink-soft);line-height:1.4;">${isHi ? st.reasonHi : st.reasonEn}</p>
+                          <div style="font-size:0.75rem;color:var(--teal);font-weight:700;">
+                            ${this.t("Target Pathways:", "लक्ष्य क्षेत्र:")} ${(isHi ? st.fieldsHi : st.fields).slice(0, 3).join(" • ")}
+                          </div>
                         </div>
-                        <div class="apt-bar-track">
-                          <div class="apt-bar-fill" style="width:${tam.score}%;background:${b.color}"></div>
-                        </div>
-                      </div>`;
-                  })
-                  .join("")}
+                      `).join("")}
+                  </div>
+                </div>
               </div>
             ` : `
               <div class="report-locked-quest-card">
@@ -5211,30 +5276,53 @@ const App = {
             `}
           </div>
 
-          <!-- SECTION 4: Top Career Matches (Strictly Top 3) -->
+          <!-- SECTION 4: Top Career Matches with Transparent Match Math -->
           <div style="margin-bottom:28px;">
-            <h2 style="font-size:1.22rem;display:flex;align-items:center;gap:8px;margin-bottom:14px;border-bottom:1.5px solid var(--edge);padding-bottom:8px;">
-              <span>🚀</span> 4. ${this.t("Top 3 Recommended Career Pathways", "शीर्ष 3 अनुशंसित करियर मार्ग")}
-            </h2>
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:14px;border-bottom:1.5px solid var(--edge);padding-bottom:8px;">
+              <h2 style="font-size:1.22rem;display:flex;align-items:center;gap:8px;margin:0;">
+                <span>🚀</span> 4. ${this.t("Top Recommended Career Pathways & Match Logic", "शीर्ष अनुशंसित करियर मार्ग एवं मैचिंग विश्लेषण")}
+              </h2>
+              <span class="tiny muted" style="background:var(--field);padding:4px 10px;border-radius:20px;border:1px solid var(--edge);font-weight:700;">
+                ${this.t("Calculated via Stage-Weighted Algorithm", "चरण-आधारित वैज्ञानिक एल्गोरिदम द्वारा आकलित")}
+              </span>
+            </div>
 
-            <div class="career-grid">
+            <div class="career-grid" style="grid-template-columns:repeat(auto-fit, minmax(min(100%, 320px), 1fr));">
               ${matches
                 .map((c, i) => {
+                  const bd = c.matchBreakdown || {};
                   return `
-                    <button class="career-card ${i === 0 ? "top-pick" : ""}" type="button" data-career="${c.id}">
+                    <div class="career-card ${i === 0 ? "top-pick" : ""}" style="display:flex;flex-direction:column;text-align:left;cursor:pointer;" onclick="App.go('career/${c.id}')">
                       <div class="career-art">${Art.career(c.id)}</div>
-                      <div class="top">
+                      <div class="top" style="align-items:flex-start;">
                         <div>
                           <div class="rank-line"><span class="c-ico">${c.icon}</span><span class="rank">№ ${i + 1}</span></div>
-                          <h3>${this.state.lang === "hi" ? c.hi : c.title}</h3>
+                          <h3 style="margin:4px 0 2px;">${this.state.lang === "hi" ? c.hi : c.title}</h3>
+                          <div class="tiny muted">${c.sector || "General"} · ${c.salary || "Competitive"}</div>
                         </div>
                         <span class="fit-badge ${i ? "alt" : ""}"><b>${c.fit}%</b><i>${this.t("FIT", "फिट")}</i></span>
                       </div>
-                      <p class="muted why-line">
-                        <strong>${this.t("Why it matches:", "क्यों फिट है:")}</strong>
-                        ${c.reasons && c.reasons[0] ? c.reasons[0].text : c.blurb}
-                      </p>
-                    </button>`;
+
+                      <!-- Transparent Match Breakdown Bar -->
+                      <div style="background:var(--field);padding:10px 12px;border-radius:10px;margin:12px 0 8px;border:1px solid var(--edge);">
+                        <div style="display:flex;justify-content:space-between;font-size:0.75rem;font-weight:800;color:var(--ink-soft);margin-bottom:6px;">
+                          <span>🎯 ${this.t("Holland", "हॉलैंड")}: ${bd.riasecPct || 50}%</span>
+                          ${bd.aptitudePct != null ? `<span>🧠 ${this.t("Aptitude", "अभिक्षमता")}: ${bd.aptitudePct}%</span>` : ""}
+                          ${bd.oceanPct != null ? `<span>🌟 ${this.t("OCEAN", "व्यक्तित्व")}: ${bd.oceanPct}%</span>` : ""}
+                          <span>📚 ${this.t("Stream", "स्ट्रीम")}: ${bd.streamPct || 50}%</span>
+                        </div>
+                        <div style="font-size:0.72rem;color:var(--teal);font-weight:700;">
+                          ⚖️ ${this.t("Formula Weighting:", "स्कोर गणना सूत्र:")} ${bd.formula || "Stage-Weighted Composite"}
+                        </div>
+                      </div>
+
+                      <div class="muted why-line" style="margin-top:auto;font-size:0.82rem;line-height:1.45;">
+                        <strong style="color:var(--ink);">${this.t("Primary Match Reasons:", "मुख्य मैच कारण:")}</strong>
+                        <ul style="margin:4px 0 0;padding-left:18px;font-size:0.8rem;">
+                          ${(c.reasons || []).slice(0, 2).map(r => `<li><strong>${r.title}:</strong> ${r.text}</li>`).join("")}
+                        </ul>
+                      </div>
+                    </div>`;
                 })
                 .join("")}
             </div>
@@ -5883,9 +5971,96 @@ const App = {
         <!-- DOSSIER 2-COLUMN GRID -->
         <div class="dossier-layout-grid">
           
-          <!-- LEFT COLUMN: Pathways, Education, Fees, Scholarships -->
+          <!-- LEFT COLUMN: Psychometric Fit, Pathways, Education, Fees, Scholarships -->
           <div class="dossier-col-main">
             
+            <!-- SECTION 0: Psychometric Compatibility & Scientific Match Calculation -->
+            ${(() => {
+              const computed = (window.MoineeScore && window.DISHA_ALL_QUESTIONS)
+                ? MoineeScore.scoreAllTiers(this.state.tierAnswers, window.DISHA_ALL_QUESTIONS)
+                : {};
+              const scores = { ...this.state.traitScores, ...(computed.traits || {}) };
+              const matchedList = MoineeScore.matchCareers({
+                ...this.state.profile,
+                traitScores: scores,
+                completedTiers: this.state.completedTiers,
+              }, [career]);
+              const m = matchedList[0] || { fit: 75, matchBreakdown: {}, reasons: [] };
+              const bd = m.matchBreakdown || {};
+
+              return `
+                <div class="card dossier-section-card" style="border:2px solid var(--teal);background:var(--card);box-shadow:0 4px 20px rgba(45, 212, 191, 0.08);">
+                  <div class="dossier-sec-head" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+                    <div style="display:flex;align-items:center;gap:10px;">
+                      <span class="sec-head-icon">🎯</span>
+                      <h2 style="margin:0;">${this.t("Psychometric Match Breakdown & Scientific Fit", "साइकोमेट्रिक मैचिंग एवं स्कोर विश्लेषण")}</h2>
+                    </div>
+                    <span class="fit-badge" style="font-size:1.15rem;padding:4px 14px;background:var(--teal);color:#fff;border-radius:20px;">
+                      <b>${m.fit}%</b> <i>${this.t("MATCH", "मैच")}</i>
+                    </span>
+                  </div>
+
+                  <div class="dossier-content-body" style="padding-top:14px;">
+                    <!-- Factor Progress Bars -->
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(min(100%, 200px), 1fr));gap:12px;margin-bottom:14px;background:var(--field);padding:14px;border-radius:12px;border:1px solid var(--edge);">
+                      <div>
+                        <div style="display:flex;justify-content:space-between;font-size:0.78rem;font-weight:800;margin-bottom:4px;">
+                          <span>🎯 ${this.t("Holland Code", "हॉलैंड कोड")}</span>
+                          <span style="color:var(--teal)">${bd.riasecPct || 50}%</span>
+                        </div>
+                        <div class="apt-bar-track" style="height:6px;"><div class="apt-bar-fill" style="width:${bd.riasecPct || 50}%;background:var(--teal)"></div></div>
+                        <div class="tiny muted" style="margin-top:2px;">${this.t("Weight:", "वेटेज:")} ${bd.riasecWeight || "35%"}</div>
+                      </div>
+
+                      ${bd.aptitudePct != null ? `
+                        <div>
+                          <div style="display:flex;justify-content:space-between;font-size:0.78rem;font-weight:800;margin-bottom:4px;">
+                            <span>🧠 ${this.t("Cognitive Aptitude", "अभिक्षमता")}</span>
+                            <span style="color:var(--marigold)">${bd.aptitudePct}%</span>
+                          </div>
+                          <div class="apt-bar-track" style="height:6px;"><div class="apt-bar-fill" style="width:${bd.aptitudePct}%;background:var(--marigold)"></div></div>
+                          <div class="tiny muted" style="margin-top:2px;">${this.t("Weight:", "वेटेज:")} ${bd.aptitudeWeight || "25%"}</div>
+                        </div>
+                      ` : ""}
+
+                      ${bd.oceanPct != null ? `
+                        <div>
+                          <div style="display:flex;justify-content:space-between;font-size:0.78rem;font-weight:800;margin-bottom:4px;">
+                            <span>🌟 ${this.t("OCEAN Personality", "व्यक्तित्व")}</span>
+                            <span style="color:var(--indigo)">${bd.oceanPct}%</span>
+                          </div>
+                          <div class="apt-bar-track" style="height:6px;"><div class="apt-bar-fill" style="width:${bd.oceanPct}%;background:var(--indigo)"></div></div>
+                          <div class="tiny muted" style="margin-top:2px;">${this.t("Weight:", "वेटेज:")} ${bd.oceanWeight || "25%"}</div>
+                        </div>
+                      ` : ""}
+
+                      <div>
+                        <div style="display:flex;justify-content:space-between;font-size:0.78rem;font-weight:800;margin-bottom:4px;">
+                          <span>📚 ${this.t("Stream Alignment", "स्ट्रीम अनुकूलता")}</span>
+                          <span style="color:var(--vermilion)">${bd.streamPct || 50}%</span>
+                        </div>
+                        <div class="apt-bar-track" style="height:6px;"><div class="apt-bar-fill" style="width:${bd.streamPct || 50}%;background:var(--vermilion)"></div></div>
+                        <div class="tiny muted" style="margin-top:2px;">${this.t("Weight:", "वेटेज:")} ${bd.streamWeight || "15%"}</div>
+                      </div>
+                    </div>
+
+                    <!-- Formula Badge -->
+                    <div style="font-size:0.8rem;background:rgba(45, 212, 191, 0.12);color:var(--teal);padding:8px 12px;border-radius:8px;font-weight:700;margin-bottom:14px;border:1px solid rgba(45, 212, 191, 0.25);">
+                      📐 ${this.t("Mathematical Calculation Formula:", "स्कोर गणना का गणितीय सूत्र:")} <code>${bd.formula || "Stage-Weighted Dynamic Vector Fit"}</code>
+                    </div>
+
+                    <!-- Itemized Reasons -->
+                    <div style="font-size:0.86rem;">
+                      <strong style="color:var(--ink);">${this.t("Why this Career fits your psychological profile:", "यह करियर आपकी मनोवैज्ञानिक प्रोफाइल के अनुकूल क्यों है:")}</strong>
+                      <ul style="margin:6px 0 0;padding-left:20px;line-height:1.5;">
+                        ${(m.reasons || []).map(r => `<li><strong>${r.title}:</strong> ${r.text}</li>`).join("")}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              `;
+            })()}
+
             <!-- SECTION 1: Educational Pathways & Entrance Exams -->
             <div class="card dossier-section-card">
               <div class="dossier-sec-head">
@@ -7366,7 +7541,8 @@ const App = {
 
     document.querySelectorAll("[data-test-opt]").forEach((btn) => {
       btn.onclick = () => {
-        const optVal = Number(btn.getAttribute("data-test-opt"));
+        const rawOpt = btn.getAttribute("data-test-opt");
+        const optVal = (rawOpt === "like" || rawOpt === "dislike" || isNaN(Number(rawOpt))) ? rawOpt : Number(rawOpt);
         const activeTier = this.state.activeTier || "tier1_riasec";
         let questions = (window.DISHA_ALL_QUESTIONS || []).filter((q) => q.tier === activeTier);
         if (!questions.length) questions = (window.DISHA_ALL_QUESTIONS || []).slice(0, 6);
@@ -7375,7 +7551,8 @@ const App = {
         if (currentQ) {
           this.state.tierAnswers[currentQ.id] = optVal;
           if (window.MoineeScore) {
-            this.state.traitScores = MoineeScore.scoreAllTiers(this.state.tierAnswers, window.DISHA_ALL_QUESTIONS || []);
+            const computed = MoineeScore.scoreAllTiers(this.state.tierAnswers, window.DISHA_ALL_QUESTIONS || []);
+            this.state.traitScores = { ...(this.state.traitScores || {}), ...(computed.traits || {}) };
           }
           this.save();
           this.render();
@@ -7386,7 +7563,7 @@ const App = {
               this.save();
               this.render();
             }
-          }, 200);
+          }, 180);
         }
       };
     });
@@ -7439,13 +7616,13 @@ const App = {
         }
         if (window.MoineeScore) {
           const computed = MoineeScore.scoreAllTiers(this.state.tierAnswers, window.DISHA_ALL_QUESTIONS || []);
-          this.state.traitScores = computed.traits || {};
+          this.state.traitScores = { ...(this.state.traitScores || {}), ...(computed.traits || {}) };
         }
         this.save();
-        this.toast(this.t("🎉 Assessment completed successfully! Discovery Path updated.", "🎉 मूल्यांकन सफलतापूर्वक पूर्ण हुआ! डिस्कवरी पथ अपडेट हो गया।"));
+        this.toast(this.t("🎉 Assessment completed successfully! Generating your Psychometric Report...", "🎉 मूल्यांकन सफलतापूर्वक पूर्ण हुआ! साइकोमेट्रिक रिपोर्ट तैयार हो रही है..."));
 
-        // Navigate back to Your Discovery Path (Assessments) page as requested
-        this.go("assessments");
+        // Direct user straight to their comprehensive Psychometric Report
+        this.go("report");
       };
     });
 
