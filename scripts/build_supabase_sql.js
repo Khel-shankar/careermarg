@@ -59,5 +59,21 @@ DISHA_ALL_QUESTIONS.forEach((q, idx) => {
   sql += "INSERT INTO public.assessment_questions (id, tier, submodule, submodule_title, submodule_title_hi, trait_code, trait_title, trait_title_hi, question_text, question_text_hi, type, options, correct_key, display_order) VALUES ('" + esc(q.id) + "', '" + esc(q.tier) + "', '" + esc(q.submodule) + "', '" + esc(q.submoduleTitle) + "', '" + esc(q.submoduleTitleHi) + "', '" + esc(q.traitCode) + "', '" + esc(q.traitTitle) + "', '" + esc(q.traitTitleHi) + "', '" + esc(q.questionText) + "', '" + esc(q.questionTextHi) + "', '" + esc(q.type || 'likert_5') + "', '" + optsJson + "'::jsonb, " + correctVal + ", " + (idx + 1) + ") ON CONFLICT (id) DO UPDATE SET tier = EXCLUDED.tier, submodule = EXCLUDED.submodule, submodule_title = EXCLUDED.submodule_title, submodule_title_hi = EXCLUDED.submodule_title_hi, trait_code = EXCLUDED.trait_code, trait_title = EXCLUDED.trait_title, trait_title_hi = EXCLUDED.trait_title_hi, question_text = EXCLUDED.question_text, question_text_hi = EXCLUDED.question_text_hi, type = EXCLUDED.type, options = EXCLUDED.options, correct_key = EXCLUDED.correct_key, display_order = EXCLUDED.display_order;\n";
 });
 
+sql += '\n-- 5. Row Level Security (RLS) & Public Access Policies\n';
+sql += 'ALTER TABLE public.assessment_questions ENABLE ROW LEVEL SECURITY;\n';
+sql += 'ALTER TABLE public.student_profiles ENABLE ROW LEVEL SECURITY;\n\n';
+
+sql += 'DROP POLICY IF EXISTS "Allow anonymous read on assessment_questions" ON public.assessment_questions;\n';
+sql += 'CREATE POLICY "Allow anonymous read on assessment_questions" ON public.assessment_questions FOR SELECT TO anon, authenticated USING (true);\n\n';
+
+sql += 'DROP POLICY IF EXISTS "Allow anonymous read on student_profiles" ON public.student_profiles;\n';
+sql += 'CREATE POLICY "Allow anonymous read on student_profiles" ON public.student_profiles FOR SELECT TO anon, authenticated USING (true);\n\n';
+
+sql += 'DROP POLICY IF EXISTS "Allow anonymous insert on student_profiles" ON public.student_profiles;\n';
+sql += 'CREATE POLICY "Allow anonymous insert on student_profiles" ON public.student_profiles FOR INSERT TO anon, authenticated WITH CHECK (true);\n\n';
+
+sql += 'DROP POLICY IF EXISTS "Allow anonymous update on student_profiles" ON public.student_profiles;\n';
+sql += 'CREATE POLICY "Allow anonymous update on student_profiles" ON public.student_profiles FOR UPDATE TO anon, authenticated USING (true) WITH CHECK (true);\n';
+
 fs.writeFileSync('database/supabase_setup.sql', sql);
-console.log('✅ Generated database/supabase_setup.sql with ' + DISHA_ALL_QUESTIONS.length + ' questions!');
+console.log('✅ Generated database/supabase_setup.sql with ' + DISHA_ALL_QUESTIONS.length + ' questions and RLS policies!');
