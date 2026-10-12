@@ -1,0 +1,18 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Prevent directory listing
+    Options -Indexes
+
+    # Route /api/questions to php_backend/assessments.php
+    RewriteRule ^api/questions/?$ php_backend/assessments.php [QSA,L]
+    RewriteRule ^api/assessments/?$ php_backend/assessments.php [QSA,L]
+
+    # Route other API endpoints to php_backend/*.php
+    RewriteRule ^api/auth/?$ php_backend/auth.php [QSA,L]
+    RewriteRule ^api/sync/?$ php_backend/sync.php [QSA,L]
+    RewriteRule ^api/careers/?$ php_backend/careers.php [QSA,L]
+    RewriteRule ^api/counselor/?$ php_backend/counselor.php [QSA,L]
+    RewriteRule ^api/db/?$ php_backend/db.php?health=1 [QSA,L]
+    RewriteRule ^api/health/?$ php_backend/db.php?health=1 [QSA,L]
+</IfModule>

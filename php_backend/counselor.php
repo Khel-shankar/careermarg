@@ -26,7 +26,7 @@ if (!$pdo) {
 }
 
 // 1. DASHBOARD STATS & COHORT OVERVIEW (Group I, II, III + Schools)
-if ($action === 'dashboard_stats') {
+if ($action === 'dashboard_stats' || $action === 'stats' || $action === 'dashboard') {
     try {
         // Total Students
         $stmtStudents = $pdo->query("SELECT COUNT(*) AS total FROM `users` WHERE `role` = 'student'");
