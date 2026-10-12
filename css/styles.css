@@ -12211,31 +12211,40 @@ html, body {
 .counselor-modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(29, 39, 51, 0.72);
-  backdrop-filter: blur(5px);
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(6px);
   z-index: 10000;
-  display: none;
-  place-items: center;
-  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
   overflow-y: auto;
-}
-
-.counselor-modal-backdrop.open {
-  display: grid;
+  animation: fadeInModal 0.18s ease-out;
 }
 
 .counselor-modal-card {
-  background: var(--paper);
-  border: 3px solid var(--ink);
-  border-radius: 22px;
+  background: var(--card, var(--paper));
+  border: 1.5px solid var(--edge, #e2e8f0);
+  border-radius: 20px;
   max-width: 960px;
   width: 100%;
   max-height: 90vh;
-  box-shadow: 0 16px 0 var(--ink);
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.28);
   overflow-y: auto;
   position: relative;
-  padding: 28px;
-  animation: pop-in 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  display: flex;
+  flex-direction: column;
+  animation: popInModal 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes fadeInModal {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes popInModal {
+  from { opacity: 0; transform: scale(0.95) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
 }
 
 .cmodal-close-btn {
@@ -12696,4 +12705,104 @@ html, body {
   }
 }
 
+/* ==========================================================================
+   STUDENT-FRIENDLY & KID-ACCESSIBLE UI ENHANCEMENTS
+   Large touch targets, joyful micro-interactions, friendly option cards
+   ========================================================================== */
 
+.quiz-option-btn {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 20px;
+  background: var(--card);
+  border: 2px solid var(--edge);
+  border-radius: 16px;
+  font-family: var(--font);
+  font-size: 1.05rem;
+  color: var(--ink);
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.18s cubic-bezier(0.2, 0.8, 0.2, 1);
+  box-shadow: 0 3px 0 var(--edge);
+  width: 100%;
+}
+
+.quiz-option-btn:hover {
+  transform: translateY(-2px);
+  border-color: var(--teal);
+  box-shadow: 0 5px 0 var(--edge), 0 8px 18px rgba(0,0,0,0.06);
+  background: var(--field);
+}
+
+.quiz-option-btn:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 0 var(--edge);
+}
+
+.quiz-option-btn.selected {
+  background: rgba(45, 212, 191, 0.12) !important;
+  border-color: var(--teal) !important;
+  color: var(--ink) !important;
+  box-shadow: 0 3px 0 var(--teal) !important;
+  font-weight: 800;
+}
+
+.opt-circle-num {
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  border-radius: 50%;
+  background: var(--field);
+  border: 1.5px solid var(--edge);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--ink);
+  transition: all 0.18s ease;
+}
+
+.quiz-option-btn.selected .opt-circle-num {
+  background: var(--teal);
+  color: #ffffff;
+  border-color: var(--teal);
+}
+
+.question-text-primary {
+  font-size: 1.35rem;
+  line-height: 1.4;
+  margin: 14px 0 6px;
+  color: var(--ink);
+  font-weight: 800;
+}
+
+.quiz-options-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 18px 0;
+}
+
+.hero-pill-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: rgba(224, 159, 62, 0.16);
+  border: 1.5px solid var(--marigold);
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.roadmap-card {
+  transition: all 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.roadmap-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+}

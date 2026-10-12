@@ -57,6 +57,20 @@ function getPool() {
   return pool;
 }
 
+function parseGrade(raw) {
+  if (typeof raw === "number") return raw;
+  if (!raw) return 10;
+  const str = String(raw).trim();
+  const match = str.match(/\d+/);
+  if (match) {
+    const num = parseInt(match[0], 10);
+    if (!isNaN(num) && num >= 1 && num <= 12) return num;
+  }
+  if (str.toLowerCase().includes("group_1") || str.toLowerCase().includes("group 1") || str.toLowerCase().includes("group i")) return 7;
+  if (str.toLowerCase().includes("group_3") || str.toLowerCase().includes("group 3") || str.toLowerCase().includes("group iii")) return 12;
+  return 10;
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
@@ -97,7 +111,7 @@ module.exports = async function handler(req, res) {
         const schoolSet = new Set();
 
         stuList.forEach((s) => {
-          const g = parseInt(s.grade_group || "10", 10);
+          const g = parseGrade(s.grade_group || s.grade_level || s.grade);
           if (g <= 8) g1++;
           else if (g >= 11) g3++;
           else g2++;
@@ -185,7 +199,7 @@ module.exports = async function handler(req, res) {
           const completedTiers = uSess.filter((s) => s.status === "completed").map((s) => s.tier_code);
           const uTrait = traitList.find((t) => t.user_id === stu.id);
 
-          const gradeNum = parseInt(stu.grade_group || "10", 10);
+          const gradeNum = parseGrade(stu.grade_group || stu.grade_level || stu.grade);
           const cohortGroup = gradeNum <= 8 ? "group_1" : gradeNum >= 11 ? "group_3" : "group_2";
           const cohortLabel = gradeNum <= 8 ? "Group I (Classes 6–8)" : gradeNum >= 11 ? "Group III (Classes 11–12)" : "Group II (Classes 9–10)";
 
@@ -217,7 +231,7 @@ module.exports = async function handler(req, res) {
             id: stu.id,
             name: stu.name || stu.full_name || "Student",
             email: stu.email || "",
-            grade: stu.grade_group || stu.grade_level || "10",
+            grade: String(gradeNum),
             school: stu.school_name || stu.school || "Direct Online Registration",
             cohortGroup,
             cohortLabel,
@@ -274,7 +288,7 @@ module.exports = async function handler(req, res) {
             id: stu.id,
             name: stu.name || stu.full_name,
             email: stu.email,
-            grade: stu.grade_group || stu.grade_level || "10",
+            grade: String(parseGrade(stu.grade_group || stu.grade_level || stu.grade)),
             school: stu.school_name || stu.school || "Direct Online Registration",
           },
           scores: {
@@ -335,7 +349,7 @@ module.exports = async function handler(req, res) {
       const schoolSet = new Set();
       let g1 = 0, g2 = 0, g3 = 0;
       students.forEach((s) => {
-        const g = parseInt(s.grade_level || "10", 10);
+        const g = parseGrade(s.grade_level || s.grade_group || s.grade);
         if (g <= 8) g1++;
         else if (g >= 11) g3++;
         else g2++;
@@ -377,13 +391,13 @@ module.exports = async function handler(req, res) {
       const enriched = students.map((s) => {
         const uSess = sessions.filter((sess) => sess.user_id === s.id);
         const comp = uSess.filter((sess) => sess.status === "completed").map((sess) => sess.tier_code);
-        const g = parseInt(s.grade_level || "10", 10);
+        const g = parseGrade(s.grade_level || s.grade_group || s.grade);
         return {
           id: s.id,
-          name: s.full_name || "Student",
+          name: s.full_name || s.name || "Student",
           email: s.email || "",
-          grade: s.grade_level || "10",
-          school: s.school_name || "Direct Online Registration",
+          grade: String(g),
+          school: s.school_name || s.school || "Direct Online Registration",
           cohortGroup: g <= 8 ? "group_1" : g >= 11 ? "group_3" : "group_2",
           cohortLabel: g <= 8 ? "Group I (Classes 6–8)" : g >= 11 ? "Group III (Classes 11–12)" : "Group II (Classes 9–10)",
           completedLevels: comp.length ? comp : ["In Progress"],

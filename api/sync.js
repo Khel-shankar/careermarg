@@ -311,6 +311,24 @@ module.exports = async function handler(req, res) {
           }
         }
 
+        // Also upsert into student_profiles for unified table viewing
+        try {
+          await sb.from("student_profiles").upsert({
+            id: userId,
+            email: userEmail,
+            name: userName,
+            grade: grade,
+            school: data.school || "Kendriya Vidyalaya",
+            stream: stream,
+            saved_careers: savedCareers,
+            completed_tiers: completedTiers,
+            tier_answers: tierAnswers,
+            trait_scores: traitScores,
+            career_matches: matches,
+            updated_at: new Date().toISOString()
+          }, { onConflict: "id" });
+        } catch (_) {}
+
         return res.status(200).json({
           success: true,
           provider: "supabase",
